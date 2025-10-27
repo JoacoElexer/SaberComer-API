@@ -1,0 +1,47 @@
+import mongoose from 'mongoose';
+
+const fichaPacientesSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },
+    nombre: { type: String, required: true },
+    apellido: { type: String, required: true },
+    direccion: String,
+    noCasa: Number,
+    colonia: String,
+    ciudad: String,
+    telefono: Number,
+    fechaNacimiento: { type: Date, required: true },
+    fechaInicio: Date,
+    ocupacion: String,
+    HTA: Boolean,
+    DM: Boolean,
+    CA: Boolean,
+    tiroides: Boolean,
+    cardiopatias: Boolean,
+    AHFOtros: String,
+    tabaquismo: Boolean,
+    drogas: Boolean,
+    OH: Boolean,
+    enfermedadesPadecidas: String,
+    antecedentesTraumaticos: String,
+    antecedentesQuirurgicos: String,
+    alergiasMedicamentos: String,
+    alergiasAlimentos: String,
+    G: String,
+    P: String,
+    C: String,
+    A: String,
+    FUR: String,
+    AgoOtros: String,
+    antecedentesTratamientosCP: String,
+    edad: Number,
+    pesoActual: Number,
+    pesoIdeal: Number,
+    estatura: Number,
+    estatura2: Number,
+    IMC: Number,
+    suIdeal: Number,
+    notasAdicionales: String
+});
+
+const FpModel = mongoose.model('FichaPaciente', fichaPacientesSchema);
+module.exports = FpModel;
