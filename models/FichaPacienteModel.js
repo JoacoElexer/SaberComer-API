@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const fichaPacientesSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     nombre: { type: String, required: true },
-    apellido: { type: String, required: true },
     direccion: String,
     noCasa: Number,
     colonia: String,
@@ -44,4 +43,4 @@ const fichaPacientesSchema = new mongoose.Schema({
 });
 
 const FpModel = mongoose.model('FichaPaciente', fichaPacientesSchema);
-module.exports = FpModel;
+export default FpModel;

@@ -11,4 +11,4 @@ const recordMedidasSchema = new mongoose.Schema({
 });
 
 const RmModel = mongoose.model('RecordMedidas', recordMedidasSchema);
-module.exports = RmModel
+export default RmModel;

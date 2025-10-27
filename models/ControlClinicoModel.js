@@ -15,4 +15,4 @@ const controlClinicoSchema = new mongoose.Schema({
 });
 
 const CcModel = mongoose.model('ControlClinico', controlClinicoSchema);
-module.exports = CcModel;
+export default CcModel;
