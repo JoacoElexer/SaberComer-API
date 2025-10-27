@@ -1,13 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler } from './utils/errorHandler.js';
-import { connectDB } from './DB/MongoDbConfig.js';
+import { mongoConnection, disconnect } from './DB/MongoDbConfig.js';
 import FpRouter from './routes/FichaPacienteRouter.js';
+import { mongo } from 'mongoose';
 
 dotenv.config();
 const app = express();
 
-// !! Coneccion a la base de datos
+// !! Conexión a la base de datos
+mongoConnection();
 
 // Middleware global
 app.use(express.json()); // Middleware para parsear JSON
