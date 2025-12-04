@@ -7,10 +7,10 @@ const controlClinicoSchema = new mongoose.Schema({
     tx: { type: String },
     guia: { type: String },
     observaciones: { type: String },
-    mesoterapia: { type: Boolean },
-    acupuntura: { type: Boolean },
-    ejercicios: { type: Boolean },
-    agua: { type: Boolean },
+    mesoterapia: { type: Boolean, default: false },
+    acupuntura: { type: Boolean, default: false },
+    ejercicios: { type: Boolean, default: false },
+    agua: { type: Boolean, default: false },
     calificacion: { type: Number }
 });
 

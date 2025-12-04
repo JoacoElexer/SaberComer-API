@@ -1,21 +1,15 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
-const uri = process.env.MONGODB_URI;
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+dotenv.config();
+const uri = process.env.MONGO_URI;
 const dbName = process.env.MONGO_CLUSTER;
 
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
-});
-
-async function mongoConnection() {
+export async function mongoConnection() {
     console.log("Conectando con MongoDB Atlas");
     try {
-        await client.connect();
-        console.log("Conectado a MongoDB Atlas");
-        const db = client.db(dbName);
+        await mongoose.connect(uri);
+        console.log("\nConectado a MongoDB Atlas");
+        const db = mongoose.connection.db;
         // Verifica si la conexión es exitosa
         await db.command({ ping: 1 });
 
@@ -36,4 +30,4 @@ async function disconnect() {
     }
 }
 
-export default { mongoConnection, disconnect };
+export default mongoConnection;

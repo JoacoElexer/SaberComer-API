@@ -12,18 +12,19 @@ class FichaPacienteService {
         return ficha;
     }
 
-    async getByName(nombre) {
+    async getByName(nombre) { // !! Hacer busqueda insensible a caracteres especiales como acentos
         const fichas = await FpModel.find({ nombre: { $regex: nombre, $options: 'i' } }); // Búsqueda regular insensible a mayúsculas/minúsculas
         return fichas;
     }
 
     async getByTel(telefono) {
-        const fichas = await FpModel.find({ telefono: telefono }); // Usar find para devolver todas las coincidencias
+        // ! Buscar por referencia y no por objeto completo
+        const fichas = await FpModel.find({ telefono: { $regex: telefono } }); // Búsqueda regular insensible a mayúsculas/minúsculas
         return fichas;
     }
 
     async getByStartDate(fechaInicio) {
-        const fichas = await FpModel.find({ fechaInicio: fechaInicio }); // Usar find para devolver todas las coincidencias
+        const fichas = await FpModel.find({ fechaInicio: fechaInicio });
         return fichas;
     }
 

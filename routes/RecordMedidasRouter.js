@@ -4,6 +4,7 @@ const RmRouter = express.Router();
 const service = new RecordMedidasService();
 
 RmRouter.get('/', async (req, res, next) => {
+    console.log("GET /recordMedidas called");
     try {
         const data = await service.getAll();
         if (data.length === 0) {
@@ -18,7 +19,9 @@ RmRouter.get('/', async (req, res, next) => {
 })
 
 RmRouter.get('/:id', async (req, res, next) => {
+    console.log("GET /recordMedidas/:id called");
     try {
+        // ! Asegurarse de que el ID es válido antes de buscar
         const registro = await service.getById(req.params.id);
         if (!registro) {
             const error = new Error('Registro de medidas no encontrado.');
@@ -32,7 +35,9 @@ RmRouter.get('/:id', async (req, res, next) => {
 })
 
 RmRouter.get('date/:fecha', async (req, res, next) => {
+    console.log("GET /recordMedidas/date/:fecha called");
     try {
+        // ! Asegurarse de que la fecha es válida antes de buscar
         const registros = await service.getByDate(req.params.fecha);
         if (registros.length === 0) {
             const error = new Error('No se encontraron registros de medidas para esa fecha.');
@@ -46,7 +51,9 @@ RmRouter.get('date/:fecha', async (req, res, next) => {
 })
 
 RmRouter.post('/', async (req, res, next) => {
+    console.log("POST /recordMedidas called");
     try {
+        // ! Asegurarse de que los datos del nuevo registro son válidos antes de crear
         const nuevoRegistro = await service.create(req.body);
         res.status(201).json(nuevoRegistro);
     } catch (error) {
@@ -55,7 +62,9 @@ RmRouter.post('/', async (req, res, next) => {
 })
 
 RmRouter.patch('/:id', async (req, res, next) => {
+    console.log("PATCH /recordMedidas/:id called");
     try {
+        // ! Asegurarse de que el ID y los datos a actualizar son válidos antes de actualizar
         const updatedRegistro = await service.update(req.params.id, req.body);
         res.status(200).json(updatedRegistro);
     } catch (error) {
@@ -64,7 +73,9 @@ RmRouter.patch('/:id', async (req, res, next) => {
 })
 
 RmRouter.delete('/:id', async (req, res, next) => {
+    console.log("DELETE /recordMedidas/:id called");
     try {
+        // ! Asegurarse de que el ID es válido antes de eliminar
         const deletedRegistro = await service.delete(req.params.id);
         res.status(200).json(deletedRegistro);
     } catch (error) {
