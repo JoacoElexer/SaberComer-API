@@ -104,7 +104,7 @@ FpRouter.get('/startdate/:fechaInicio', async (req, res, next) => {
     }
 });
 
-// !! No funciona, revisar variable fecha (No necesario para proyecto final)
+// !! No funciona, revisar variable fecha (No necesario para entrega de universidad)
 FpRouter.get('/day/:fechaInicio', async (req, res, next) => {
     console.log("GET /fichaPacientes/startdate/day/:fechaInicio called");
     try {
@@ -143,6 +143,11 @@ FpRouter.post('/', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
+        if (!data.telefono || isNaN(data.telefono)) {
+            const error = new Error('El teléfono proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
         const nuevaFicha = await service.create(data);
         res.status(201).json(nuevaFicha);
     } catch (error) {
@@ -160,6 +165,11 @@ FpRouter.patch('/:id', async (req, res, next) => {
             return next(error);
         }
         const data = req.body;
+        if (!data.telefono || isNaN(data.telefono)) {
+            const error = new Error('El teléfono proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
         if (!data || Object.keys(data).length === 0) {
             const error = new Error('Los datos proporcionados no son válidos.');
             error.status = 400;

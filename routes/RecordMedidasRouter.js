@@ -1,7 +1,9 @@
 import express from 'express';
 import RecordMedidasService from '../services/RecordMedidasService.js';
+import FichaPacienteService from '../services/FichaPacienteService.js';
 const RmRouter = express.Router();
 const service = new RecordMedidasService();
+const fichaService = new FichaPacienteService();
 
 RmRouter.get('/', async (req, res, next) => {
     console.log("GET /recordMedidas called");
@@ -62,16 +64,23 @@ RmRouter.get('/date/:fechaParam', async (req, res, next) => {
     }
 })
 
-RmRouter.post('/', async (req, res, next) => {
+RmRouter.post('/:id', async (req, res, next) => {
     console.log("POST /recordMedidas called");
     const data = req.body;
+    const { id } = req.params;
     try {
         if (!data || Object.keys(data).length === 0) {
             const error = new Error('Los datos proporcionados no son válidos.');
             error.status = 400;
             return next(error);
         }
-        const nuevoRegistro = await service.create(data);
+        // !! Verificacion para comprobar que el id de ficha de paciente es valido
+        if (!id || id.trim() === '') {
+            const error = new Error('El ID proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
+        const nuevoRegistro = await service.create(data, id);
         res.status(201).json(nuevoRegistro);
     } catch (error) {
         return next(error);

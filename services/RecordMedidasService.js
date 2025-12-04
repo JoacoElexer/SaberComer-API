@@ -22,8 +22,9 @@ class RecordMedidasService {
         return fichas;
     }
 
-    async create(data) {
-        const newData = new RmModel(data);
+    async create(data, id) {
+        const newId = id;
+        const newData = new RmModel({ ...data, id: newId });
         return await newData.save();
     }
 

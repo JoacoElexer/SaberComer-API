@@ -1,4 +1,5 @@
 import FpModel from '../models/FichaPacienteModel.js';
+import idGenerator from '../utils/idGenerator.js';
 // !! Implementar middleware
 class FichaPacienteService {
 
@@ -35,7 +36,8 @@ class FichaPacienteService {
     }
 
     async create(data) {
-        const newData = new FpModel(data);
+        const newId = await idGenerator.createId(data.nombre)
+        const newData = new FpModel({ ...data, id: newId });
         return await newData.save();
     }
 

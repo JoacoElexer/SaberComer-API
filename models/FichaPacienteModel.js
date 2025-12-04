@@ -10,6 +10,14 @@ const antGinecoObstetricosSchema = new mongoose.Schema({
     AgoOtros: { type: String, default: "" }
 }, { _id: false });
 
+const controlDePesoSchema = new mongoose.Schema({
+    antecedentesTratamientosCP: { type: String, default: "" }, // * Opcional
+    pesoInicio: { type: Number, min: 0, max: 300, default: null }, // * Opcional
+    pesoIdeal: { type: Number, min: 0, max: 300, default: null }, // * Opcional
+    estatura: { type: Number, min: 0, max: 300, default: null }, // * Opcional
+    suIdeal: { type: Number, min: 0, max: 300, default: null }, // * Opcional
+}, { _id: false });
+
 const fichaPacientesSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     nombre: { type: String, required: true },
@@ -36,11 +44,7 @@ const fichaPacientesSchema = new mongoose.Schema({
     alergiasMedicamentos: { type: String, default: "Ninguna" },
     alergiasAlimentos: { type: String, default: "Ninguna" },
     antecedentesGinecoObstetricos: { type: antGinecoObstetricosSchema, default: () => ({}) },
-    antecedentesTratamientosCP: String, // * Opcional
-    pesoInicio: Number, // * Opcional
-    pesoIdeal: Number, // * Opcional
-    estatura: Number, // * Opcional
-    suIdeal: Number, // * Opcional
+    controlDePeso: { type: controlDePesoSchema, default: () => ({}) },
     notasAdicionales: String
 },{
     timestamps: true
