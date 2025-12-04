@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler } from './utils/errorHandler.js';
 import mongoConnection from './DB/MongoDbConfig.js';
-import FpRouter from './routes/FichaPacienteRouter.js';
+import router from './router/router.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 
@@ -22,7 +22,7 @@ app.use(express.json()); // Middleware para parsear JSON
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rutas
-app.use('/fichaPacientes', FpRouter);
+router(app);
 
 // Manejo de errores
 app.use(errorHandler);

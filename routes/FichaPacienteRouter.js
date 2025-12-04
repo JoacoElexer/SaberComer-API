@@ -7,7 +7,7 @@ FpRouter.get('/', async (req, res, next) => {
     console.log("GET /fichaPacientes called");
     try {
         const data = await service.getAll();
-        if ( !Array.isArray(data) || data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0) {
             const error = new Error('No se encontraron fichas de pacientes.');
             error.status = 404;
             return next(error);
@@ -85,30 +85,54 @@ FpRouter.get('/tel/:telefono', async (req, res, next) => {
 FpRouter.get('/startdate/:fechaInicio', async (req, res, next) => {
     console.log("GET /fichaPacientes/startdate/:fechaInicio called");
     try {
-        let fecha = null;
-        if (req.params.fechaInicio) {
-            fecha = new Date(req.params.fechaInicio);
-        } else {
-            const error = new Error('La fecha de inicio proporcionada no es válida.');
-            error.status = 400;
-            return next(error);
+        const { fechaInicio } = req.params;
+        if (!fechaInicio) {
+            return next(Object.assign(new Error('La fecha de inicio proporcionada no es válida.'), { status: 400 }));
         }
-        if ( isNaN(fecha.getTime()) ) {
-            const error = new Error('El tipo de dato de la fecha de inicio no es válido.');
-            error.status = 400;
-            return next(error);
+        const fecha = new Date(fechaInicio);
+        if (isNaN(fecha.getTime())) {
+            return next(Object.assign(new Error('El tipo de dato de la fecha de inicio no es válido.'), { status: 400 }));
         }
-        const fichas = await service.getByStartDate(req.params.fechaInicio);
-        if (fichas.length === 0) {
-            const error = new Error('No se encontraron fichas de pacientes con esa fecha de inicio.');
-            error.status = 404;
-            return next(error);
+        // Llamada al service CON LA FECHA ya validada
+        const fichas = await service.getByStartDate(fecha);
+        if (!fichas || fichas.length === 0) {
+            return next(Object.assign(new Error('No se encontraron fichas de pacientes con esa fecha de inicio.'), { status: 404 }));
         }
         res.status(200).json(fichas);
     } catch (error) {
+        next(error);
+    }
+});
+
+// !! No funciona, revisar variable fecha (No necesario para proyecto final)
+FpRouter.get('/day/:fechaInicio', async (req, res, next) => {
+    console.log("GET /fichaPacientes/startdate/day/:fechaInicio called");
+    try {
+        const { fecha } = req.params;
+        if (!fecha) {
+            const error = new Error(`No se proporcionó una fecha: ${fecha}`);
+            error.status = 400;
+            return next(error);
+        }
+        const parsed = new Date(fecha);
+        if (isNaN(parsed.getTime())) {
+            const error = new Error('La fecha proporcionada no es válida.');
+            error.status = 400;
+            return next(error);
+        }
+        const start = new Date(parsed.setHours(0, 0, 0, 0));
+        const end = new Date(parsed.setHours(23, 59, 59, 999));
+        const fichas = await service.getByDayDate(start, end);
+        if (!fichas || fichas.length === 0) {
+            const error = new Error('No se encontraron fichas con esa fecha.');
+            error.status = 404;
+            return next(error);
+        }
+        return res.status(200).json(fichas);
+    } catch (error) {
         return next(error);
     }
-})
+});
 
 FpRouter.post('/', async (req, res, next) => {
     console.log("POST /fichaPacientes called");
@@ -129,8 +153,19 @@ FpRouter.post('/', async (req, res, next) => {
 FpRouter.patch('/:id', async (req, res, next) => {
     console.log("PATCH /fichaPacientes/:id called");
     try {
-        // ! Asegurarse de que el ID y los datos a actualizar son válidos antes de actualizar
-        const fichaActualizada = await service.update(req.params.id, req.body);
+        const id = req.params.id;
+        if (!id || id.trim() === '') {
+            const error = new Error('El ID proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
+        const data = req.body;
+        if (!data || Object.keys(data).length === 0) {
+            const error = new Error('Los datos proporcionados no son válidos.');
+            error.status = 400;
+            return next(error);
+        }
+        const fichaActualizada = await service.update(id, data);
         res.status(200).json(fichaActualizada);
     } catch (error) {
         return next(error);
@@ -140,8 +175,13 @@ FpRouter.patch('/:id', async (req, res, next) => {
 FpRouter.delete('/:id', async (req, res, next) => {
     console.log("DELETE /fichaPacientes/:id called");
     try {
-        // ! Asegurarse de que el ID es válido antes de eliminar
-        const fichaEliminada = await service.delete(req.params.id);
+        const id = req.params.id;
+        if (!id || id.trim() === '') {
+            const error = new Error('El ID proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
+        const fichaEliminada = await service.delete(id);
         res.status(200).json(fichaEliminada);
     } catch (error) {
         return next(error);

@@ -18,7 +18,7 @@ class ControlClinicoService {
     }
 
     async getByRating(rating) {
-        const registros = await CcModel.find({ rating: rating }); // Usar find para devolver todas las coincidencias
+        const registros = await CcModel.find({ calificacion: rating }); // Usar find para devolver todas las coincidencias
         return registros;
     }
 

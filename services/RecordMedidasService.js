@@ -1,5 +1,5 @@
 import RmModel from '../models/RecordMedidasModel.js';
-
+// !! Implementar middleware
 class RecordMedidasService {
 
     async getAll() {
@@ -15,6 +15,11 @@ class RecordMedidasService {
     async getByDate(fecha) {
         const registros = await RmModel.find({ fecha: fecha }); // Usar find para devolver todas las coincidencias
         return registros;
+    }
+
+    async getByDayDate(inicio, fin) {
+        const fichas = await RmModel.find({ fechaInicio: { $gte: inicio, $lte: fin } });
+        return fichas;
     }
 
     async create(data) {

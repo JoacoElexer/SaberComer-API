@@ -12,19 +12,25 @@ class FichaPacienteService {
         return ficha;
     }
 
-    async getByName(nombre) { // !! Hacer busqueda insensible a caracteres especiales como acentos
-        const fichas = await FpModel.find({ nombre: { $regex: nombre, $options: 'i' } }); // Búsqueda regular insensible a mayúsculas/minúsculas
+    async getByName(nombre) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
+        const fichas = await FpModel.find(
+            { nombre: { $regex: nombre, $options: 'i' } }
+        ).collation({ locale: 'es', strength: 2 }); // Búsqueda regular insensible a mayúsculas/minúsculas
         return fichas;
     }
 
     async getByTel(telefono) {
-        // ! Buscar por referencia y no por objeto completo
         const fichas = await FpModel.find({ telefono: { $regex: telefono } }); // Búsqueda regular insensible a mayúsculas/minúsculas
         return fichas;
     }
 
     async getByStartDate(fechaInicio) {
         const fichas = await FpModel.find({ fechaInicio: fechaInicio });
+        return fichas;
+    }
+
+    async getByDayDate(inicio, fin) {
+        const fichas = await FpModel.find({ fechaInicio: { $gte: inicio, $lte: fin } });
         return fichas;
     }
 

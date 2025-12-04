@@ -1,5 +1,15 @@
 import mongoose from 'mongoose';
 
+const antGinecoObstetricosSchema = new mongoose.Schema({
+    // * Antecedentes GinecoObstetricos
+    G: { type: String, default: "" },
+    P: { type: String, default: "" },
+    C: { type: String, default: "" },
+    A: { type: String, default: "" },
+    FUR: { type: String, default: "" },
+    AgoOtros: { type: String, default: "" }
+}, { _id: false });
+
 const fichaPacientesSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     nombre: { type: String, required: true },
@@ -9,7 +19,7 @@ const fichaPacientesSchema = new mongoose.Schema({
     ciudad: { type: String, default: "" },
     telefono: { type: String, match: /^[0-9]{10}$/, }, // ! Agregar validación de formato en routes y app
     fechaNacimiento: { type: Date, required: true },
-    fechaInicio: { type: Date, required: true }, // ! Dato agregado automaticamente
+    fechaInicio: { type: Date, required: true, default: Date.now }, // * Dato agregado automaticamente
     ocupacion: { type: String, default: "" },
     HTA: { type: Boolean, default: false },
     DM: { type: Boolean, default: false },
@@ -25,24 +35,17 @@ const fichaPacientesSchema = new mongoose.Schema({
     antecedentesQuirurgicos: { type: String, default: "Ninguno" },
     alergiasMedicamentos: { type: String, default: "Ninguna" },
     alergiasAlimentos: { type: String, default: "Ninguna" },
-    // * Antecedentes GinecoObstetricos
-    G: { type: String, default: "" }, // ! Agregar en objeto
-    P: { type: String, default: "" }, // ! Agregar en objeto
-    C: { type: String, default: "" }, // ! Agregar en objeto
-    A: { type: String, default: "" }, // ! Agregar en objeto
-    FUR: { type: String, default: "" },
-    AgoOtros: { type: String, default: "" },
-    // ! mover opcionales a nuevo modelo
+    antecedentesGinecoObstetricos: { type: antGinecoObstetricosSchema, default: () => ({}) },
     antecedentesTratamientosCP: String, // * Opcional
-    edad: Number, // * Opcional
-    pesoActual: Number, // * Opcional
+    pesoInicio: Number, // * Opcional
     pesoIdeal: Number, // * Opcional
     estatura: Number, // * Opcional
-    estatura2: Number, // ! Eliminar y agregar cálculo automático en app
-    IMC: Number, // * Opcional (formula: peso * estatura^2)
     suIdeal: Number, // * Opcional
     notasAdicionales: String
-});
+},{
+    timestamps: true
+}
+);
 
 const FpModel = mongoose.model('FichaPaciente', fichaPacientesSchema);
 export default FpModel;
