@@ -9,7 +9,7 @@ class FichaPacienteService {
     }
 
     async getById(id) {
-        const ficha = await FpModel.find({ id: id }); // Usar find para devolver todas las coincidencias
+        const ficha = await FpModel.findOne({ id: id }); // Usar find para devolver todas las coincidencias
         return ficha;
     }
 

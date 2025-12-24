@@ -101,7 +101,6 @@ CcRouter.post('/:id', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
-        // !! Verificacion para comprobar que el id de ficha de paciente es valido
         if (!id || id.trim() === '') {
             const error = new Error('El ID proporcionado no es válido.');
             error.status = 400;

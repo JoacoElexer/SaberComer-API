@@ -191,7 +191,7 @@ FpRouter.delete('/:id', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
-        const fichaEliminada = await service.delete(id);
+        const fichaEliminada = await service.delete(id); // !! Eliinar otros registros junto con la ficha
         res.status(200).json(fichaEliminada);
     } catch (error) {
         return next(error);

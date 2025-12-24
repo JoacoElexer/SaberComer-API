@@ -30,7 +30,7 @@ class ControlClinicoService {
 
     async update(id, data) {
         const updatedData = await CcModel.findOneAndUpdate(
-            { id: id },
+            { _id: id },
             { $set: data },
             { new: true }
         );
@@ -41,7 +41,7 @@ class ControlClinicoService {
     }
 
     async delete(id) {
-        const deletedData = await CcModel.findOneAndDelete({ id: id });
+        const deletedData = await CcModel.findOneAndDelete({ _id: id });
         if (!deletedData) {
             throw new Error('El registro clínico no existe');
         }

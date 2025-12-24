@@ -30,7 +30,7 @@ class RecordMedidasService {
 
     async update(id, data) {
         const updatedData = await RmModel.findOneAndUpdate(
-            { id: id },
+            { _id: id },
             { $set: data },
             { new: true }
         );
@@ -42,7 +42,7 @@ class RecordMedidasService {
 
     async delete(id) {
         const deletedData = await RmModel.findOneAndDelete
-            ({ id: id });
+            ({ _id: id });
         if (!deletedData) {
             throw new Error('El registro de medidas no existe');
         }
