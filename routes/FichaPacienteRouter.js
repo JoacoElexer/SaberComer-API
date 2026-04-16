@@ -143,8 +143,18 @@ FpRouter.post('/', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
+        if (!data.nombre || data.nombre.trim() === '') {
+            const error = new Error('El nombre proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
         if (!data.telefono || isNaN(data.telefono)) {
             const error = new Error('El teléfono proporcionado no es válido.');
+            error.status = 400;
+            return next(error);
+        }
+        if(!data.fechaNacimiento || isNaN(new Date(data.fechaNacimiento).getTime())) {
+            const error = new Error('La fecha de nacimiento proporcionada no es válida.');
             error.status = 400;
             return next(error);
         }
@@ -191,7 +201,7 @@ FpRouter.delete('/:id', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
-        const fichaEliminada = await service.delete(id); // !! Eliinar otros registros junto con la ficha
+        const fichaEliminada = await service.delete(id); // !! Eliminar otros registros junto con la ficha
         res.status(200).json(fichaEliminada);
     } catch (error) {
         return next(error);

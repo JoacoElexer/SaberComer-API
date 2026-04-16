@@ -9,7 +9,6 @@ const dbName = process.env.MONGO_CLUSTER;
 
 export async function mongoConnection() {
     console.log("Conectando con MongoDB Atlas...");
-    console.log("URI:", uri);
     try {
         await mongoose.connect(uri);
         console.log("\n¡Conectado a MongoDB Atlas!");
@@ -21,6 +20,7 @@ export async function mongoConnection() {
         return db;  // Devuelve la conexión a la base de datos
     } catch (error) {
         console.error("Error al conectar a MongoDB: ", error);
+        //!! TODO: Reintentar la conexión o manejar el error de manera adecuada
         throw error; // Propaga el error para un manejo adecuado
     }
 }
