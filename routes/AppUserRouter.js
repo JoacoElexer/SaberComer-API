@@ -72,17 +72,17 @@ AppUserRouter.post("/login", async (req, res, next) => {
         }
         const user = await service.getUserByEmail(correo);
         if (!user) {
-            const error = new Error('Usuario no encontrado.');
+            const error = new Error('Correo o contraseña incorrectos.');
             error.status = 404;
             return next(error);
         }
         const isValid = await service.comparePin(pin, user.pin);
         if (!isValid) {
-            const error = new Error('PIN incorrecto.');
+            const error = new Error('Correo o contraseña incorrectos.');
             error.status = 401;
             return next(error);
         }
-        res.json({
+        res.status(200).json({
             message: "Login exitoso",
             usuario: user.usuario,
             correo: user.correo,
