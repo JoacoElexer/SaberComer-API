@@ -25,6 +25,7 @@ class ControlClinicoService {
     async create(data, id) {
         const newId = id;
         const newData = new CcModel({ ...data, id: newId });
+        
         return await newData.save();
     }
 

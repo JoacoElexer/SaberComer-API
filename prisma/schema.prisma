@@ -1,0 +1,26 @@
+// npx prisma migrate dev --name init_postgres_tables
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1.- App User
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+// 2.- Ficha Paciente
+
+
+// 4.- Control Clinico
+
+
+/ 5.- Record Medidas

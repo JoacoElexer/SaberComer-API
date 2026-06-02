@@ -43,6 +43,9 @@ const controlDePesoSchema = new mongoose.Schema({
     pesoIdeal: { type: Number, min: 0, max: 300, default: null }, // * Opcional
     estatura: { type: Number, min: 0, max: 300, default: null }, // * Opcional
     suIdeal: { type: Number, min: 0, max: 300, default: null }, // * Opcional
+    // abdomen alto
+    // ombligo
+    // cadera
 }, { _id: false });
 
 const fichaPacientesSchema = new mongoose.Schema({
