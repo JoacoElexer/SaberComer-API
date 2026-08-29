@@ -19,7 +19,7 @@ class AppUserService {
     }
 
     async createUser(data) {
-        const { usuario, correo, pin, role } = data;
+        const { usuario, correo, pin, role, protegido } = data;
         const hashedPin = await encryption.hashValue(pin);
         if (role && (!role.rol || typeof role.rol !== "string")) {
             throw new Error("El role debe ser un objeto con la propiedad rol: { rol: 'dev' }");
@@ -28,9 +28,19 @@ class AppUserService {
             usuario,
             correo,
             pin: hashedPin,
-            role
+            role,
+            estado: protegido ? "activo" : "pendiente",
+            protegido: protegido ?? false
         });
         return await newUser.save();
+    }
+
+    async getUserById(id) {
+        return await AppUserModel.findById(id);
+    }
+
+    async getUsersByEstado(estado) {
+        return await AppUserModel.find({ "estado": estado });
     }
 
     async updateUser(id, data) {
@@ -39,6 +49,14 @@ class AppUserService {
             updateData.pin = await encryption.hashValue(data.pin);
         }
         return await AppUserModel.findByIdAndUpdate(id, updateData, { new: true });
+    }
+
+    async updateEstado(id, estado) {
+        return await AppUserModel.findByIdAndUpdate(
+            id,
+            { $set: { estado } },
+            { new: true }
+        );
     }
 
     async deleteUser(id) {

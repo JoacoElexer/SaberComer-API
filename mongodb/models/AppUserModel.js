@@ -11,9 +11,18 @@ const userRoleSchema = new mongoose.Schema({ // Subdocumento creado para añadir
 
 const userSchema = new mongoose.Schema({
     usuario: { type: String, required: true, unique: true, trim: true },
-    correo: { type: String, required: true, unique: true, lowercase: true, trim: true, match: /^[\w.-]+@[\w.-]+\.\w{2,}$/ }, // validación simple de correo
+    correo: { type: String, required: true, unique: true, lowercase: true, trim: true, match: /^[\w.-]+@[\w.-]+\.\w{2,}$/ },
     pin: { type: String, required: true },
-    role: { type: userRoleSchema }
+    role: { type: userRoleSchema },
+    estado: {
+        type: String,
+        enum: ["pendiente", "activo", "rechazado"],
+        default: "pendiente"
+    },
+    protegido: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });
