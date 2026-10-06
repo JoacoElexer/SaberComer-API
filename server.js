@@ -1,11 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler } from './utils/errorHandler.js';
-import mongoConnection from './DB/MongoDbConfig.js';
 import router from './router/router.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import cors from 'cors';
+import prisma from './DB/prismaClient.js';
 
 dotenv.config();
 
@@ -31,9 +31,11 @@ app.use(cors({
 
 // !! Conexión a la base de datos
 try {
-    await mongoConnection();
+    await prisma.$connect();
+    console.log('Conectado a Aiven!');
 } catch (error) {
-    console.error("Error al conectar a la base de datos", error);
+    console.error("Error al conectar a Aiven", error);
+    process.exit(1);
 }
 
 // Middleware global

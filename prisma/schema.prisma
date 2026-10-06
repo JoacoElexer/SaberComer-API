@@ -1,0 +1,139 @@
+// npx prisma migrate dev --name init_postgres_tables
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===== ENUMS =====
+
+enum Rol {
+  dev
+  admin
+  user
+}
+
+enum EstadoCuenta {
+  pendiente
+  activo
+  rechazado
+}
+
+// ===== MODELS =====
+
+model Usuario {
+  id         String       @id @default(uuid()) @db.Uuid
+  usuario    String       @unique
+  correo     String       @unique
+  pin        String
+  rol        Rol          @default(user)
+  estado     EstadoCuenta @default(pendiente)
+  protegido  Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("usuarios")
+}
+
+model FichaPaciente {
+  id               String    @id @default(uuid()) @db.Uuid
+  nombre           String
+  direccion        String?   @default("")
+  ciudad           String?   @default("")
+  telefono         String?
+  fechaNacimiento  DateTime
+  fechaInicio      DateTime  @default(now())
+  ocupacion        String?   @default("")
+  notasAdicionales String?
+
+  // Antecedentes Heredo Familiares
+  ahfHta           Boolean   @default(false)
+  ahfDm            Boolean   @default(false)
+  ahfCa            Boolean   @default(false)
+  ahfTiroides      Boolean   @default(false)
+  ahfCardiopatias  Boolean   @default(false)
+  ahfOtros         String?   @default("Ninguno")
+
+  // Antecedentes Personales No Patológicos
+  apnpTabaquismo   Boolean   @default(false)
+  apnpDrogas       Boolean   @default(false)
+  apnpOh           Boolean   @default(false)
+
+  // Antecedentes Personales Patológicos
+  appEnfermedades  String?   @default("Ninguna")
+  appTraumaticos   String?   @default("Ninguno")
+  appQuirurgicos   String?   @default("Ninguno")
+  appAlergiaMeds   String?   @default("Ninguna")
+  appAlergiaAlim   String?   @default("Ninguna")
+
+  // Antecedentes Gineco Obstétricos
+  agoG             String?   @default("")
+  agoP             String?   @default("")
+  agoC             String?   @default("")
+  agoA             String?   @default("")
+  agoFur           String?   @default("")
+  agoOtros         String?   @default("")
+
+  // Control de Peso
+  cdpAntecedentes  String?   @default("")
+  cdpPesoInicio    Float?
+  cdpPesoIdeal     Float?
+  cdpEstatura      Float?
+  cdpSuIdeal       Float?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relaciones
+  controlesClinicos  ControlClinico[]
+  recordMedidas      RecordMedidas[]
+
+  @@map("fichas_paciente")
+}
+
+model ControlClinico {
+  id            String   @id @default(uuid()) @db.Uuid
+  fecha         DateTime @default(now())
+  peso          Float?
+  tx            String?  @default("")
+  guia          String?  @default("")
+  observaciones String?  @default("")
+  calificacion  Int?
+
+  // Opciones de control
+  mesoterapia   Boolean  @default(false)
+  acupuntura    Boolean  @default(false)
+  ejercicios    Boolean  @default(false)
+  agua          Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // FK
+  pacienteId    String   @db.Uuid
+  paciente      FichaPaciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@map("controles_clinicos")
+}
+
+model RecordMedidas {
+  id            String   @id @default(uuid()) @db.Uuid
+  fecha         DateTime @default(now())
+  busto         Float?
+  abdomenAlto   Float?
+  ombligo       Float?
+  cadera        Float?
+  observaciones String?  @default("")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // FK
+  pacienteId    String   @db.Uuid
+  paciente      FichaPaciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@map("record_medidas")
+}
