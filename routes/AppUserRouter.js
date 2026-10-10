@@ -1,8 +1,16 @@
 import express from 'express';
 import AppUserService from '../services/AppUserService.js';
-import encryption from "../utils/encryption.js";
+
 const AppUserRouter = express.Router();
 const service = new AppUserService();
+
+AppUserRouter.get('/teapot', async (req, res, next) => {
+    try {
+        res.status(418).send(await service.tetera());
+    } catch (error) {
+        return next(error);
+    }
+});
 
 AppUserRouter.get('/email/:email', async (req, res, next) => {
     console.log("GET /users/email/:email called");
@@ -19,7 +27,7 @@ AppUserRouter.get('/email/:email', async (req, res, next) => {
             error.status = 404;
             return next(error);
         }
-        res.status(200).json(user);
+        res.status(200).json(publicUser(user));
     } catch (error) {
         return next(error);
     }
@@ -34,13 +42,18 @@ AppUserRouter.get('/role/:role', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
+        if (!["dev", "admin", "user"].includes(role)) {
+            const error = new Error('Rol no válido.');
+            error.status = 400;
+            return next(error);
+        }
         const users = await service.getUsersByRole(role);
         if (!users || users.length === 0) {
             const error = new Error('No se encontraron usuarios con el rol proporcionado.');
             error.status = 404;
             return next(error);
         }
-        res.status(200).json(users);
+        res.status(200).json(users.map(publicUser));
     } catch (error) {
         return next(error);
     }
@@ -61,7 +74,7 @@ AppUserRouter.get('/estado/:estado', async (req, res, next) => {
             error.status = 404;
             return next(error);
         }
-        res.status(200).json(usuarios);
+        res.status(200).json(usuarios.map(publicUser));
     } catch (error) {
         return next(error);
     }
@@ -76,8 +89,26 @@ AppUserRouter.post('/', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
+        if (typeof data.usuario !== 'string' || !data.usuario.trim() ||
+            typeof data.correo !== 'string' || !data.correo.trim() ||
+            typeof data.pin !== 'string' || !data.pin.trim()) {
+            const error = new Error('Usuario, correo y PIN son obligatorios.');
+            error.status = 400;
+            return next(error);
+        }
+        const rol = data.rol ?? data.role ?? 'user';
+        if (!["dev", "admin", "user"].includes(rol)) {
+            const error = new Error('Rol no válido.');
+            error.status = 400;
+            return next(error);
+        }
+        if (data.protegido !== undefined && typeof data.protegido !== 'boolean') {
+            const error = new Error('protegido debe ser true o false.');
+            error.status = 400;
+            return next(error);
+        }
         const newUser = await service.createUser(data);
-        res.status(201).json(newUser);
+        res.status(201).json(publicUser(newUser));
     } catch (error) {
         return next(error);
     }
@@ -113,9 +144,10 @@ AppUserRouter.post("/login", async (req, res, next) => {
         }
         res.status(200).json({
             message: "Login exitoso",
+            id: user.id,
             usuario: user.usuario,
             correo: user.correo,
-            role: user.role
+            rol: user.rol
         });
     } catch (error) {
         return next(error);
@@ -139,7 +171,7 @@ AppUserRouter.patch('/:id', async (req, res, next) => {
             return next(error);
         }
         const updatedUser = await service.updateUser(id, data);
-        res.status(200).json(updatedUser);
+        res.status(200).json(publicUser(updatedUser));
     } catch (error) {
         return next(error);
     }
@@ -161,7 +193,28 @@ AppUserRouter.patch('/estado/:id', async (req, res, next) => {
             error.status = 404;
             return next(error);
         }
-        res.status(200).json(updated);
+        res.status(200).json(publicUser(updated));
+    } catch (error) {
+        return next(error);
+    }
+});
+
+AppUserRouter.patch('/protegido/:id', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { protegido } = req.body;
+        if (protegido !== true && protegido !== false) {
+            const error = new Error('El valor de protegido debe ser válido.');
+            error.status = 400;
+            return next(error);
+        }
+        const updated = await service.updateProtegido(id, protegido);
+        if (!updated) {
+            const error = new Error('Usuario no encontrado.');
+            error.status = 404;
+            return next(error);
+        }
+        res.status(200).json(publicUser(updated));
     } catch (error) {
         return next(error);
     }
@@ -176,22 +229,26 @@ AppUserRouter.delete('/:id', async (req, res, next) => {
             error.status = 400;
             return next(error);
         }
-        const usuario = await service.getUserById(id);
-        if (!usuario) {
+        const user = await service.getUserById(id);
+        if (!user) {
             const error = new Error('Usuario no encontrado.');
             error.status = 404;
             return next(error);
         }
-        if (usuario.protegido) {
+        if (user.protegido) {
             const error = new Error('Esta cuenta no puede ser eliminada.');
             error.status = 403;
             return next(error);
         }
         const deletedUser = await service.deleteUser(id);
-        res.status(200).json(deletedUser);
+        res.status(200).json(publicUser(deletedUser));
     } catch (error) {
         return next(error);
     }
 });
+
+function publicUser({ pin, ...user }) {
+    return user;
+}
 
 export default AppUserRouter;

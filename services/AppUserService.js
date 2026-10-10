@@ -1,46 +1,55 @@
-import AppUserModel from "../models/AppUserModel.js";
+import prisma from '../DB/prismaClient.js'; // PostgreSQL
+//import AppUserModel from "../models/AppUserModel.js"; // MongoDB
 import encryption from "../utils/encryption.js";
 
 class AppUserService {
 
-    async getUserByEmail(email) {
-        const user = await AppUserModel.findOne({ correo: email });
-        return user;
+    async tetera() {
+        return 'soy una tetera!';
     }
 
-    async getByRole(role) {
-        const users = await AppUserModel.find({ "role.rol": role });
-        return users;
+    async getUserByEmail(email) {
+        return await prisma.usuario.findUnique({
+            where: { correo: email.trim().toLowerCase() }
+        })
+    }
+
+    async getUsersByRole(role) {
+        return await prisma.usuario.findMany({
+            where: { rol: role }
+        })
     }
 
     async comparePin(inputPin, storedPin) {
-        const isMatch = await encryption.compareValue(inputPin, storedPin);
-        return isMatch;
+        return await encryption.compareValue(inputPin, storedPin);
     }
 
     async createUser(data) {
-        const { usuario, correo, pin, role, protegido } = data;
+        const { usuario, correo, pin, protegido = false } = data;
+        const rol = data.rol ?? data.role ?? 'user';
         const hashedPin = await encryption.hashValue(pin);
-        if (role && (!role.rol || typeof role.rol !== "string")) {
-            throw new Error("El role debe ser un objeto con la propiedad rol: { rol: 'dev' }");
-        }
-        const newUser = new AppUserModel({
-            usuario,
-            correo,
-            pin: hashedPin,
-            role,
-            estado: protegido ? "activo" : "pendiente",
-            protegido: protegido ?? false
+        return await prisma.usuario.create({
+            data: {
+                usuario,
+                correo: correo.trim().toLowerCase(),
+                pin: hashedPin,
+                rol: rol ?? 'user',
+                estado: protegido ? 'activo' : 'pendiente',
+                protegido: protegido ?? false
+            }
         });
-        return await newUser.save();
     }
 
     async getUserById(id) {
-        return await AppUserModel.findById(id);
+        return await prisma.usuario.findUnique({
+            where: { id }
+        });
     }
 
     async getUsersByEstado(estado) {
-        return await AppUserModel.find({ "estado": estado });
+        return await prisma.usuario.findMany({
+            where: { estado }
+        });
     }
 
     async updateUser(id, data) {
@@ -48,19 +57,30 @@ class AppUserService {
         if (data.pin) {
             updateData.pin = await encryption.hashValue(data.pin);
         }
-        return await AppUserModel.findByIdAndUpdate(id, updateData, { new: true });
+        return await prisma.usuario.update({
+            where: { id },
+            data: updateData
+        });
     }
 
     async updateEstado(id, estado) {
-        return await AppUserModel.findByIdAndUpdate(
-            id,
-            { $set: { estado } },
-            { new: true }
-        );
+        return await prisma.usuario.update({
+            where: { id },
+            data: { estado }
+        });
+    }
+
+    async updateProtegido(id, protegido) {
+        return await prisma.usuario.update({
+            where: { id },
+            data: { protegido }
+        });
     }
 
     async deleteUser(id) {
-        return await AppUserModel.findByIdAndDelete(id);
+        return await prisma.usuario.delete({
+            where: { id }
+        });
     }
 }
 

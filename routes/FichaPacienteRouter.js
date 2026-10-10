@@ -3,6 +3,14 @@ import FichaPacienteService from '../services/FichaPacienteService.js';
 const FpRouter = express.Router();
 const service = new FichaPacienteService();
 
+FpRouter.get('/teapot', async (req, res, next) => {
+    try {
+        res.status(418).send(await service.tetera());
+    } catch (error) {
+        return next(error);
+    }
+});
+
 FpRouter.get('/', async (req, res, next) => {
     console.log("GET /fichaPacientes called");
     try {

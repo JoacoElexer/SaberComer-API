@@ -1,64 +1,64 @@
-import FpModel from '../models/FichaPacienteModel.js';
+import prisma from '../DB/prismaClient.js'; // PostgreSQL
+//import FpModel from '../models/FichaPacienteModel.js';
 import idGenerator from '../utils/idGenerator.js';
 // !! Implementar middleware
 class FichaPacienteService {
 
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
     async getAll() {
-        const fichas = await FpModel.find();
-        return fichas;
+        return await prisma.fichaPaciente.findMany();
     }
 
     async getById(id) {
-        const ficha = await FpModel.findOne({ id: id }); // Usar find para devolver todas las coincidencias
-        return ficha;
+        return await prisma.fichaPaciente.findUnique({
+            where: { id }
+        });
     }
 
     async getByName(nombre) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
-        const fichas = await FpModel.find(
-            { nombre: { $regex: nombre, $options: 'i' } }
-        ).collation({ locale: 'es', strength: 2 }); // Búsqueda regular insensible a mayúsculas/minúsculas
-        return fichas;
+        return await prisma.fichaPaciente.findMany({
+            where: { nombre: { contains: nombre, mode: 'insensitive' } }
+        });
     }
 
     async getByTel(telefono) {
-        const fichas = await FpModel.find({ telefono: { $regex: telefono } }); // Búsqueda regular insensible a mayúsculas/minúsculas
-        return fichas;
+        return await prisma.fichaPaciente.findMany({
+            where: { telefono: { contains: telefono } }
+        });
     }
 
     async getByStartDate(fechaInicio) {
-        const fichas = await FpModel.find({ fechaInicio: fechaInicio });
-        return fichas;
+        return await prisma.fichaPaciente.findMany({
+            where: { fechaInicio }
+        });
     }
 
     async getByDayDate(inicio, fin) {
-        const fichas = await FpModel.find({ fechaInicio: { $gte: inicio, $lte: fin } });
-        return fichas;
+        return await prisma.fichaPaciente.findMany({
+            where: { fechaInicio: { gte: inicio, lte: fin } }
+        });
     }
 
     async create(data) {
-        const newId = await idGenerator.createId(data.nombre)
-        const newData = new FpModel({ ...data, id: newId });
-        return await newData.save();
+        return await prisma.fichaPaciente.create({
+            data: data
+        });
     }
 
     async update(id, data) {
-        const updatedData = await FpModel.findOneAndUpdate(
-            { id: id },
-            { $set: data },
-            { new: true }
-        );
-        if (!updatedData) {
-            throw new Error('La ficha de paciente no existe');
-        }
-        return updatedData;
+        return await prisma.fichaPaciente.update({
+            where: { id },
+            data: data
+        });
     }
 
     async delete(id) {
-        const deletedData = await FpModel.findOneAndDelete({ id: id });
-        if (!deletedData) {
-            throw new Error('La ficha de paciente no existe');
-        }
-        return deletedData;
+        return await prisma.fichaPaciente.delete({
+            where: { id }
+        });
     }
 }
 

@@ -5,6 +5,14 @@ const RmRouter = express.Router();
 const service = new RecordMedidasService();
 const fichaService = new FichaPacienteService();
 
+RmRouter.get('/teapot', async (req, res, next) => {
+    try {
+        res.status(418).send(await service.tetera());
+    } catch (error) {
+        return next(error);
+    }
+});
+
 RmRouter.get('/', async (req, res, next) => {
     console.log("GET /recordMedidas called");
     try {

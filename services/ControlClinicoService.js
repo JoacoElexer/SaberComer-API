@@ -1,52 +1,54 @@
-import CcModel from '../models/ControlClinicoModel.js';
+import prisma from '../DB/prismaClient.js'; // PostgreSQL
+//import CcModel from '../models/ControlClinicoModel.js';
 
 class ControlClinicoService {
 
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
     async getAll() {
-        const registros = await CcModel.find();
-        return registros;
+        return await prisma.controlClinico.findMany();
     }
 
     async getById(id) {
-        const registro = await CcModel.find({ id: id }); // Usar find para devolver todas las coincidencias
-        return registro;
+        return await prisma.controlClinico.findUnique({
+            where: { id }
+        });
     }
 
     async getByDate(fecha) {
-        const registros = await CcModel.find({ fecha: fecha }); // Usar find para devolver todas las coincidencias
-        return registros;
+        return await prisma.controlClinico.findMany({
+            where: { fecha }
+        });
     }
 
     async getByRating(rating) {
-        const registros = await CcModel.find({ calificacion: rating }); // Usar find para devolver todas las coincidencias
-        return registros;
+        return await prisma.controlClinico.findMany({
+            where: { rating }
+        });
     }
 
     async create(data, id) {
-        const newId = id;
-        const newData = new CcModel({ ...data, id: newId });
-        
-        return await newData.save();
+        return await prisma.controlClinico.create({
+            data: {
+                ...data,
+                usuarioId: id
+            }
+        });
     }
 
     async update(id, data) {
-        const updatedData = await CcModel.findOneAndUpdate(
-            { _id: id },
-            { $set: data },
-            { new: true }
-        );
-        if (!updatedData) {
-            throw new Error('El registro clínico no existe');
-        }
-        return updatedData;
+        return await prisma.controlClinico.update({
+            where: { id },
+            data: data
+        });
     }
 
     async delete(id) {
-        const deletedData = await CcModel.findOneAndDelete({ _id: id });
-        if (!deletedData) {
-            throw new Error('El registro clínico no existe');
-        }
-        return deletedData;
+        return await prisma.controlClinico.delete({
+            where: { id }
+        });
     }
 }
 

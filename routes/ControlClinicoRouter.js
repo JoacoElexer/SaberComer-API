@@ -5,6 +5,14 @@ const CcRouter = express.Router();
 const service = new ControlClinicoService();
 const fichaService = new FichaPacienteService();
 
+CcRouter.get('/teapot', async (req, res, next) => {
+    try {
+        res.status(418).send(await service.tetera());
+    } catch (error) {
+        return next(error);
+    }
+});
+
 CcRouter.get('/', async (req, res, next) => {
     console.log("GET /controlClinico called");
     try {
