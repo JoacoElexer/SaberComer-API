@@ -2,8 +2,10 @@
 // controles clínicos y 3 registros de medidas. Los ids son fijos para que el
 // seed se pueda ejecutar varias veces sin duplicar nada (upsert).
 import bcrypt from 'bcrypt';
+import { parseDateInput } from '../utils/dates.js';
+import { passwordProblem } from '../utils/encryption.js';
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 // UUID v4 válido y fijo: 5eed0000-0000-4000-8000-<tipo><número>
 const seedId = (tipo, n) => `5eed0000-0000-4000-8000-${tipo}${String(n).padStart(11, '0')}`;
@@ -65,11 +67,13 @@ const PACIENTES = [
 const SEMANA_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function seed(prisma, { dev }) {
-    if (!dev?.usuario || !dev?.correo || !dev?.pin) {
-        throw new Error('Faltan SEED_DEV_USUARIO, SEED_DEV_CORREO o SEED_DEV_PIN en el .env.');
+    if (!dev?.usuario || !dev?.correo || !dev?.password) {
+        throw new Error('Faltan SEED_DEV_USUARIO, SEED_DEV_CORREO o SEED_DEV_PASSWORD en el .env.');
     }
+    const problema = passwordProblem(dev.password);
+    if (problema) throw new Error(`SEED_DEV_PASSWORD no es válida: ${problema}`);
 
-    // Si la cuenta ya existe no se modifica (en particular, no se cambia su PIN).
+    // Si la cuenta ya existe no se modifica (en particular, no se cambia su contraseña).
     const correo = dev.correo.trim().toLowerCase();
     await prisma.usuario.upsert({
         where: { correo },
@@ -77,7 +81,7 @@ export async function seed(prisma, { dev }) {
         create: {
             usuario: dev.usuario.trim(),
             correo,
-            pin: await bcrypt.hash(dev.pin, SALT_ROUNDS),
+            password: await bcrypt.hash(dev.password, SALT_ROUNDS),
             rol: 'dev',
             estado: 'activo',
             protegido: true
@@ -88,8 +92,8 @@ export async function seed(prisma, { dev }) {
         const pacienteId = seedId('a', i + 1);
         const ficha = {
             ...paciente,
-            fechaNacimiento: new Date(paciente.fechaNacimiento),
-            fechaInicio: new Date(paciente.fechaInicio)
+            fechaNacimiento: parseDateInput(paciente.fechaNacimiento),
+            fechaInicio: parseDateInput(paciente.fechaInicio)
         };
         await prisma.fichaPaciente.upsert({ where: { id: pacienteId }, update: ficha, create: { id: pacienteId, ...ficha } });
 

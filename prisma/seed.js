@@ -8,7 +8,7 @@ try {
         dev: {
             usuario: process.env.SEED_DEV_USUARIO,
             correo: process.env.SEED_DEV_CORREO,
-            pin: process.env.SEED_DEV_PIN
+            password: process.env.SEED_DEV_PASSWORD
         }
     });
     console.log('Seed completado:', total);

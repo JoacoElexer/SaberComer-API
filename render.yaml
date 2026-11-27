@@ -1,0 +1,34 @@
+# Blueprint de Render. Se puede crear el servicio desde este archivo
+# (Dashboard → New → Blueprint) o configurarlo a mano con los mismos valores.
+# Los valores con sync: false son secretos: Render los pide al crear el servicio.
+services:
+  - type: web
+    name: sabercomer-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    # Aplica las migraciones pendientes antes de arrancar.
+    startCommand: npm run start:render
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: APP_TIMEZONE
+        value: America/Mexico_City
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: DATABASE_POOL_MAX
+        value: "5"
+      - key: WEBAPP_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      # Contenido completo del PEM (se pueden pegar varias líneas).
+      - key: DATABASE_CA_CERT
+        sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false

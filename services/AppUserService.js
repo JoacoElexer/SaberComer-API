@@ -1,5 +1,8 @@
 import prisma from '../DB/prismaClient.js';
-import encryption from "../utils/encryption.js";
+import encryption from '../utils/encryption.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ usuario: 'asc' }];
 
 class AppUserService {
 
@@ -10,31 +13,31 @@ class AppUserService {
     async getUserByEmail(email) {
         return await prisma.usuario.findUnique({
             where: { correo: email.trim().toLowerCase() }
-        })
+        });
     }
 
-    async getUsersByRole(role) {
-        return await prisma.usuario.findMany({
-            where: { rol: role }
-        })
+    async getUsersByRole(rol, page) {
+        return await findPage(prisma.usuario, { where: { rol }, orderBy: ORDER, ...page });
     }
 
-    async comparePin(inputPin, storedPin) {
-        return await encryption.compareValue(inputPin, storedPin);
+    async getUsersByEstado(estado, page) {
+        return await findPage(prisma.usuario, { where: { estado }, orderBy: ORDER, ...page });
     }
 
-    async createUser(data) {
-        const { usuario, correo, pin, protegido = false } = data;
-        const rol = data.rol ?? data.role ?? 'user';
-        const hashedPin = await encryption.hashValue(pin);
+    // Compara en tiempo constante aunque el usuario no exista (storedHash null).
+    async comparePassword(input, storedHash) {
+        return await encryption.compareValue(input, storedHash);
+    }
+
+    async createUser({ usuario, correo, password, rol = 'user', protegido = false }) {
         return await prisma.usuario.create({
             data: {
-                usuario,
+                usuario: usuario.trim(),
                 correo: correo.trim().toLowerCase(),
-                pin: hashedPin,
-                rol: rol ?? 'user',
+                password: await encryption.hashValue(password),
+                rol,
                 estado: protegido ? 'activo' : 'pendiente',
-                protegido: protegido ?? false
+                protegido
             }
         });
     }
@@ -45,16 +48,12 @@ class AppUserService {
         });
     }
 
-    async getUsersByEstado(estado) {
-        return await prisma.usuario.findMany({
-            where: { estado }
-        });
-    }
-
     async updateUser(id, data) {
         const updateData = { ...data };
-        if (data.pin) {
-            updateData.pin = await encryption.hashValue(data.pin);
+        if (data.password) {
+            updateData.password = await encryption.hashValue(data.password);
+            // Invalida los tokens emitidos antes del cambio.
+            updateData.passwordChangedAt = new Date();
         }
         return await prisma.usuario.update({
             where: { id },

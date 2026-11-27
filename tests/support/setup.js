@@ -19,3 +19,13 @@ process.env.JWT_PRIVATE_KEY_PATH = join(dir, 'private.pem');
 process.env.JWT_PUBLIC_KEY_PATH = join(dir, 'public.pem');
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.WEBAPP_URL = 'http://front.test';
+// Las claves se leen de los archivos temporales, no de variables con contenido.
+delete process.env.JWT_PRIVATE_KEY;
+delete process.env.JWT_PUBLIC_KEY;
+
+// Límites de peticiones altos para que no interfieran con el resto de pruebas.
+// tests/rateLimit.test.js los baja para comprobarlos.
+process.env.RATE_LIMIT_API_MAX ??= '100000';
+process.env.RATE_LIMIT_LOGIN_MAX ??= '100000';
+process.env.RATE_LIMIT_REGISTER_MAX ??= '100000';
+process.env.APP_TIMEZONE ??= 'America/Mexico_City';

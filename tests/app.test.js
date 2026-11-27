@@ -3,7 +3,7 @@ import express from 'express';
 import { loadApp } from './support/helpers.js';
 import { errorHandler } from '../utils/errorHandler.js';
 
-const { app } = await loadApp();
+const { app, prisma } = await loadApp();
 
 describe('Comportamiento general', () => {
     test('una ruta inexistente responde 404 en JSON', async () => {
@@ -27,6 +27,28 @@ describe('Comportamiento general', () => {
 
     test('Swagger ya no está disponible', async () => {
         expect((await request(app).get('/api-docs')).status).toBe(404);
+    });
+
+    test('GET /health responde 200 si la base de datos contesta y 503 si no', async () => {
+        expect((await request(app).get('/health')).body).toEqual({ status: 'ok' });
+        prisma.$healthy = false;
+        const caida = await request(app).get('/health');
+        prisma.$healthy = true;
+        expect(caida.status).toBe(503);
+    });
+
+    test('helmet añade cabeceras de seguridad y oculta X-Powered-By', async () => {
+        const res = await request(app).get('/users/teapot');
+        expect(res.headers['x-powered-by']).toBeUndefined();
+        expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['strict-transport-security']).toBeDefined();
+    });
+
+    test('un body de más de 100 kb responde 413', async () => {
+        const res = await request(app).post('/users/login')
+            .send({ correo: 'a@a.test', password: 'x'.repeat(110 * 1024) });
+        expect(res.status).toBe(413);
+        expect(res.body.message).toMatch(/demasiado grande/);
     });
 });
 

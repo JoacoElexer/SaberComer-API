@@ -7,7 +7,7 @@ const now = () => new Date();
 
 const MODELS = {
     usuario: {
-        fields: ['id', 'usuario', 'correo', 'pin', 'rol', 'estado', 'protegido', 'createdAt', 'updatedAt'],
+        fields: ['id', 'usuario', 'correo', 'password', 'passwordChangedAt', 'rol', 'estado', 'protegido', 'createdAt', 'updatedAt'],
         unique: ['usuario', 'correo'],
         defaults: () => ({ rol: 'user', estado: 'pendiente', protegido: false })
     },
@@ -66,9 +66,32 @@ function matches(row, where = {}) {
     });
 }
 
+// orderBy de Prisma: [{ campo: 'asc' | 'desc' }, ...]
+function compareBy(orders) {
+    return (a, b) => {
+        for (const order of orders) {
+            const [[field, dir]] = Object.entries(order);
+            const x = value(a[field]);
+            const y = value(b[field]);
+            if (x === y) continue;
+            const cmp = x === null || x === undefined ? -1 : y === null || y === undefined ? 1 : (x < y ? -1 : 1);
+            return dir === 'desc' ? -cmp : cmp;
+        }
+        return 0;
+    };
+}
+
 export function createFakePrisma() {
     const tables = Object.fromEntries(Object.keys(MODELS).map(name => [name, []]));
-    const client = { $connect: async () => {}, $disconnect: async () => {} };
+    const client = {
+        $connect: async () => {},
+        $disconnect: async () => {},
+        $healthy: true,
+        async $queryRaw() {
+            if (!client.$healthy) throw new Error('Base de datos no disponible');
+            return [{ '?column?': 1 }];
+        }
+    };
 
     const checkFields = (name, data) => {
         const unknown = Object.keys(data).filter(f => !MODELS[name].fields.includes(f));
@@ -92,8 +115,14 @@ export function createFakePrisma() {
 
     for (const name of Object.keys(MODELS)) {
         client[name] = {
-            async findMany({ where } = {}) {
-                return tables[name].filter(row => matches(row, where)).map(row => ({ ...row }));
+            async findMany({ where, orderBy, skip = 0, take } = {}) {
+                const rows = tables[name].filter(row => matches(row, where));
+                if (orderBy) rows.sort(compareBy([].concat(orderBy)));
+                const end = take === undefined ? undefined : skip + take;
+                return rows.slice(skip, end).map(row => ({ ...row }));
+            },
+            async count({ where } = {}) {
+                return tables[name].filter(row => matches(row, where)).length;
             },
             async findUnique({ where }) {
                 const row = tables[name].find(r => matches(r, where));

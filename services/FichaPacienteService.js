@@ -1,5 +1,8 @@
 import prisma from '../DB/prismaClient.js';
-import { dayRange } from '../utils/dateRange.js';
+import { dayRange } from '../utils/dates.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ nombre: 'asc' }, { id: 'asc' }];
 
 class FichaPacienteService {
 
@@ -7,8 +10,8 @@ class FichaPacienteService {
         return 'soy una tetera!';
     }
 
-    async getAll() {
-        return await prisma.fichaPaciente.findMany();
+    async getAll(page) {
+        return await findPage(prisma.fichaPaciente, { orderBy: ORDER, ...page });
     }
 
     async getById(id) {
@@ -17,22 +20,22 @@ class FichaPacienteService {
         });
     }
 
-    async getByName(nombre) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
-        return await prisma.fichaPaciente.findMany({
-            where: { nombre: { contains: nombre, mode: 'insensitive' } }
+    async getByName(nombre, page) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
+        return await findPage(prisma.fichaPaciente, {
+            where: { nombre: { contains: nombre, mode: 'insensitive' } }, orderBy: ORDER, ...page
         });
     }
 
-    async getByTel(telefono) {
-        return await prisma.fichaPaciente.findMany({
-            where: { telefono: { contains: telefono } }
+    async getByTel(telefono, page) {
+        return await findPage(prisma.fichaPaciente, {
+            where: { telefono: { contains: telefono } }, orderBy: ORDER, ...page
         });
     }
 
-    // Fichas cuya fecha de inicio cae en el mismo día que `fecha`.
-    async getByStartDay(fecha) {
-        return await prisma.fichaPaciente.findMany({
-            where: { fechaInicio: dayRange(fecha) }
+    // Fichas cuya fecha de inicio cae en ese día (en la zona horaria de la app).
+    async getByStartDay(dia, page) {
+        return await findPage(prisma.fichaPaciente, {
+            where: { fechaInicio: dayRange(dia) }, orderBy: ORDER, ...page
         });
     }
 

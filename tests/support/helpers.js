@@ -14,13 +14,13 @@ export async function loadApp() {
     return { app, prisma, auth };
 }
 
-export const PIN = '1234';
-const PIN_HASH = bcrypt.hashSync(PIN, 4);
+export const PASSWORD = 'Secreta123';
+const PASSWORD_HASH = bcrypt.hashSync(PASSWORD, 4);
 
 // Crea un usuario de cada tipo y devuelve los usuarios y sus tokens.
 export function seedUsers(prisma, auth) {
     const crear = (usuario, rol, estado = 'activo', extra = {}) =>
-        prisma.$insert('usuario', { usuario, correo: `${usuario}@ejemplo.test`, pin: PIN_HASH, rol, estado, ...extra });
+        prisma.$insert('usuario', { usuario, correo: `${usuario}@ejemplo.test`, password: PASSWORD_HASH, rol, estado, ...extra });
 
     const users = {
         dev: crear('dev', 'dev', 'activo', { protegido: true }),

@@ -1,5 +1,8 @@
 import prisma from '../DB/prismaClient.js';
-import { dayRange } from '../utils/dateRange.js';
+import { dayRange } from '../utils/dates.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ fecha: 'desc' }, { id: 'asc' }];
 
 class ControlClinicoService {
 
@@ -7,8 +10,8 @@ class ControlClinicoService {
         return 'soy una tetera!';
     }
 
-    async getAll() {
-        return await prisma.controlClinico.findMany();
+    async getAll(page) {
+        return await findPage(prisma.controlClinico, { orderBy: ORDER, ...page });
     }
 
     async getById(id) {
@@ -17,16 +20,16 @@ class ControlClinicoService {
         });
     }
 
-    async getByDate(fecha) {
-        return await prisma.controlClinico.findMany({
-            where: { fecha: dayRange(fecha) }
-        });
+    async getByPaciente(pacienteId, page) {
+        return await findPage(prisma.controlClinico, { where: { pacienteId }, orderBy: ORDER, ...page });
     }
 
-    async getByRating(calificacion) {
-        return await prisma.controlClinico.findMany({
-            where: { calificacion: Number(calificacion) }
-        });
+    async getByDate(dia, page) {
+        return await findPage(prisma.controlClinico, { where: { fecha: dayRange(dia) }, orderBy: ORDER, ...page });
+    }
+
+    async getByRating(calificacion, page) {
+        return await findPage(prisma.controlClinico, { where: { calificacion }, orderBy: ORDER, ...page });
     }
 
     async create(data, pacienteId) {

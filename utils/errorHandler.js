@@ -1,3 +1,5 @@
+import { routeOf } from './requestLogger.js';
+
 // Traduce errores conocidos de Prisma a respuestas HTTP. Se identifican por
 // nombre y código para no acoplar este módulo al cliente generado.
 const PRISMA_ERRORS = {
@@ -19,11 +21,20 @@ export const errorHandler = (err, req, res, next) => {
     } else if (err.name === 'PrismaClientValidationError') {
         status = 400;
         message = 'Los datos enviados no tienen el formato esperado.';
+    } else if (err.type === 'entity.too.large') {
+        message = 'El cuerpo de la petición es demasiado grande.';
+    } else if (err.type === 'entity.parse.failed') {
+        message = 'El cuerpo de la petición no es JSON válido.';
     }
 
     if (status >= 500) {
-        // El detalle interno se registra en el servidor, nunca se envía al cliente.
-        if (process.env.NODE_ENV !== 'test') console.error(err);
+        // Se registra el tipo de error y la ruta (sin parámetros ni body, que
+        // pueden contener datos de pacientes). Nunca se envía el detalle al cliente.
+        if (process.env.NODE_ENV !== 'test') {
+            const codigo = err.code ? ` [${err.code}]` : '';
+            console.error(`Error ${req.method} ${routeOf(req)}: ${err.name}${codigo}`);
+            if (!err.name?.startsWith('Prisma')) console.error(err.stack);
+        }
         message = 'Error interno del servidor.';
     }
 

@@ -1,8 +1,8 @@
 import express from 'express';
 import FichaPacienteService from '../services/FichaPacienteService.js';
-import {
-    httpError, validateUuidParam, isEmptyBody, parseDate, normalizeDates, stripProtectedFields
-} from '../utils/validation.js';
+import { httpError, validateUuidParam, isEmptyBody, normalizeDates, sanitizeBody } from '../utils/validation.js';
+import { parseDay } from '../utils/dates.js';
+import { parsePagination, pageResponse } from '../utils/pagination.js';
 
 const FpRouter = express.Router();
 const service = new FichaPacienteService();
@@ -14,9 +14,8 @@ FpRouter.get('/teapot', async (req, res) => {
 });
 
 FpRouter.get('/', async (req, res) => {
-    const data = await service.getAll();
-    if (data.length === 0) throw httpError(404, 'No se encontraron fichas de pacientes.');
-    res.status(200).json(data);
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getAll(page), page));
 });
 
 FpRouter.get('/id/:id', async (req, res) => {
@@ -28,26 +27,23 @@ FpRouter.get('/id/:id', async (req, res) => {
 FpRouter.get('/name/:nombre', async (req, res) => {
     const nombre = req.params.nombre.trim();
     if (!nombre) throw httpError(400, 'El nombre proporcionado no es válido.');
-    const fichas = await service.getByName(nombre);
-    if (fichas.length === 0) throw httpError(404, 'No se encontraron fichas de pacientes con ese nombre.');
-    res.status(200).json(fichas);
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByName(nombre, page), page));
 });
 
 FpRouter.get('/tel/:telefono', async (req, res) => {
     const telefono = req.params.telefono.trim();
-    if (!telefono || isNaN(telefono)) throw httpError(400, 'El teléfono proporcionado no es válido.');
-    const fichas = await service.getByTel(telefono);
-    if (fichas.length === 0) throw httpError(404, 'No se encontraron fichas de pacientes con ese teléfono.');
-    res.status(200).json(fichas);
+    if (!/^\d+$/.test(telefono)) throw httpError(400, 'El teléfono proporcionado no es válido.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByTel(telefono, page), page));
 });
 
 // /startdate/:fecha y /day/:fecha devuelven las fichas iniciadas ese día.
 const getByStartDay = async (req, res) => {
-    const fecha = parseDate(req.params.fecha);
-    if (!fecha) throw httpError(400, 'La fecha proporcionada no es válida.');
-    const fichas = await service.getByStartDay(fecha);
-    if (fichas.length === 0) throw httpError(404, 'No se encontraron fichas de pacientes con esa fecha de inicio.');
-    res.status(200).json(fichas);
+    const dia = parseDay(req.params.fecha);
+    if (!dia) throw httpError(400, 'La fecha proporcionada no es válida.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByStartDay(dia, page), page));
 };
 FpRouter.get('/startdate/:fecha', getByStartDay);
 FpRouter.get('/day/:fecha', getByStartDay);
@@ -74,7 +70,7 @@ FpRouter.delete('/:id', async (req, res) => {
 // campos enviados.
 function prepararDatos(body, { parcial }) {
     if (isEmptyBody(body)) throw httpError(400, 'Los datos proporcionados no son válidos.');
-    const data = stripProtectedFields(body, ['controlesClinicos', 'recordMedidas']);
+    const data = sanitizeBody(body, ['controlesClinicos', 'recordMedidas']);
 
     if (!parcial || data.nombre !== undefined) {
         if (typeof data.nombre !== 'string' || data.nombre.trim() === '') {
@@ -83,10 +79,9 @@ function prepararDatos(body, { parcial }) {
         data.nombre = data.nombre.trim();
     }
     if (!parcial || data.telefono !== undefined) {
-        if (data.telefono === null || data.telefono === undefined || String(data.telefono).trim() === '' || isNaN(data.telefono)) {
-            throw httpError(400, 'El teléfono proporcionado no es válido.');
-        }
-        data.telefono = String(data.telefono).trim();
+        const telefono = data.telefono === null || data.telefono === undefined ? '' : String(data.telefono).trim();
+        if (!/^\d+$/.test(telefono)) throw httpError(400, 'El teléfono proporcionado no es válido.');
+        data.telefono = telefono;
     }
     if (!parcial && data.fechaNacimiento === undefined) {
         throw httpError(400, 'La fecha de nacimiento proporcionada no es válida.');

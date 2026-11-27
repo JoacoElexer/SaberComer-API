@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
-import { readFileSync } from 'node:fs';
 import prisma from '../DB/prismaClient.js';
+import { requirePem } from './secrets.js';
 
 // Se firma con RS256: el backend firma con la clave privada y el front-end
 // puede verificar el token sin conexión usando solo la clave pública.
@@ -9,8 +9,15 @@ const ALGORITHM = 'RS256';
 const ISSUER = 'sabercomer-api';
 const EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-const privateKey = readFileSync(process.env.JWT_PRIVATE_KEY_PATH || './certs/jwt-private.pem', 'utf8');
-export const publicKey = readFileSync(process.env.JWT_PUBLIC_KEY_PATH || './certs/jwt-public.pem', 'utf8');
+// Contenido en JWT_PRIVATE_KEY / JWT_PUBLIC_KEY, o ruta en *_PATH (por defecto certs/).
+const privateKey = requirePem(
+    { contentVar: 'JWT_PRIVATE_KEY', pathVar: 'JWT_PRIVATE_KEY_PATH', defaultPath: './certs/jwt-private.pem' },
+    'la clave privada de JWT'
+);
+export const publicKey = requirePem(
+    { contentVar: 'JWT_PUBLIC_KEY', pathVar: 'JWT_PUBLIC_KEY_PATH', defaultPath: './certs/jwt-public.pem' },
+    'la clave pública de JWT'
+);
 
 export const ROLES_ADMIN = ['admin', 'dev'];
 
@@ -46,6 +53,10 @@ async function resolveUser(req) {
     const user = await prisma.usuario.findUnique({ where: { id: payload.sub } });
     if (!user || user.estado !== 'activo') {
         throw httpError(401, 'La cuenta no está activa.');
+    }
+    // Un token emitido antes del último cambio de contraseña ya no vale.
+    if (user.passwordChangedAt && payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
+        throw httpError(401, 'La contraseña cambió. Inicia sesión de nuevo.');
     }
     return user;
 }
