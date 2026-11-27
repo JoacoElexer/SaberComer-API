@@ -1,4 +1,5 @@
 import prisma from '../DB/prismaClient.js'; // PostgreSQL
+import { dayRange } from '../utils/dateRange.js';
 //import CcModel from '../models/ControlClinicoModel.js';
 
 class ControlClinicoService {
@@ -19,21 +20,21 @@ class ControlClinicoService {
 
     async getByDate(fecha) {
         return await prisma.controlClinico.findMany({
-            where: { fecha }
+            where: { fecha: dayRange(fecha) }
         });
     }
 
-    async getByRating(rating) {
+    async getByRating(calificacion) {
         return await prisma.controlClinico.findMany({
-            where: { rating }
+            where: { calificacion: Number(calificacion) }
         });
     }
 
-    async create(data, id) {
+    async create(data, pacienteId) {
         return await prisma.controlClinico.create({
             data: {
                 ...data,
-                usuarioId: id
+                pacienteId
             }
         });
     }

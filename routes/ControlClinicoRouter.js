@@ -60,7 +60,7 @@ CcRouter.get('/date/:fechaParam', async (req, res, next) => {
         if (isNaN(fecha.getTime())) {
             return next(Object.assign(new Error('El tipo de dato de la fecha de inicio no es válido.'), { status: 400 }));
         }
-        const fichas = await service.getByDate(fechaParam);
+        const fichas = await service.getByDate(fecha);
         if (fichas.length === 0) {
             const error = new Error('No se encontraron registros clínicos en esa fecha.');
             error.status = 404;
@@ -76,7 +76,7 @@ CcRouter.get('/rating/:calificacion', async (req, res, next) => {
     console.log("GET /controlClinico/rating/:calificacion called");
     try {
         const { calificacion } = req.params;
-        if (!calificacion || calificacion.trim() === '' || isNaN(calificacion)) {
+        if (!calificacion || calificacion.trim() === '' || !Number.isInteger(Number(calificacion))) {
             const error = new Error('La calificación proporcionada no es válida.');
             error.status = 400;
             return next(error);

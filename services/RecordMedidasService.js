@@ -1,4 +1,5 @@
 import prisma from '../DB/prismaClient.js'; // PostgreSQL
+import { dayRange } from '../utils/dateRange.js';
 //import RmModel from '../models/RecordMedidasModel.js';
 // !! Implementar middleware
 class RecordMedidasService {
@@ -19,7 +20,7 @@ class RecordMedidasService {
 
     async getByDate(fecha) {
         return await prisma.recordMedidas.findMany({
-            where: { fecha }
+            where: { fecha: dayRange(fecha) }
         });
     }
 
@@ -29,11 +30,11 @@ class RecordMedidasService {
         });
     }
 
-    async create(data, id) {
+    async create(data, pacienteId) {
         return await prisma.recordMedidas.create({
             data: {
                 ...data,
-                id
+                pacienteId
             }
         });
     }

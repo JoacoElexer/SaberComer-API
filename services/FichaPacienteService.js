@@ -1,6 +1,7 @@
 import prisma from '../DB/prismaClient.js'; // PostgreSQL
 //import FpModel from '../models/FichaPacienteModel.js';
 import idGenerator from '../utils/idGenerator.js';
+import { dayRange } from '../utils/dateRange.js';
 // !! Implementar middleware
 class FichaPacienteService {
 
@@ -32,7 +33,7 @@ class FichaPacienteService {
 
     async getByStartDate(fechaInicio) {
         return await prisma.fichaPaciente.findMany({
-            where: { fechaInicio }
+            where: { fechaInicio: dayRange(fechaInicio) }
         });
     }
 
