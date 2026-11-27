@@ -1,154 +1,91 @@
 import express from 'express';
 import ControlClinicoService from '../services/ControlClinicoService.js';
 import FichaPacienteService from '../services/FichaPacienteService.js';
+import { httpError, validateUuidParam, isEmptyBody, normalizeDates, sanitizeBody } from '../utils/validation.js';
+import { parseDay } from '../utils/dates.js';
+import { parsePagination, pageResponse } from '../utils/pagination.js';
+
 const CcRouter = express.Router();
 const service = new ControlClinicoService();
 const fichaService = new FichaPacienteService();
 
-CcRouter.get('/', async (req, res, next) => {
-    console.log("GET /controlClinico called");
-    try {
-        const data = await service.getAll();
-        if (!Array.isArray(data) || data.length === 0) {
-            const error = new Error('No se encontraron fichas de pacientes.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(data);
-    } catch (error) {
-        return next(error);
-    }
-})
+CcRouter.param('id', validateUuidParam);
 
-CcRouter.get('/:id', async (req, res, next) => {
-    console.log("GET /controlClinico/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const registro = await service.getById(id);
-        if (!registro) {
-            const error = new Error('Registro clínico no encontrado.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(registro);
-    } catch (error) {
-        return next(error);
-    }
-})
+async function requireFicha(id) {
+    const ficha = await fichaService.getById(id);
+    if (!ficha) throw httpError(404, 'Ficha de paciente no encontrada.');
+    return ficha;
+}
 
-CcRouter.get('/date/:fechaParam', async (req, res, next) => {
-    console.log("GET /controlClinico/date/:fecha called");
-    try {
-        const { fechaParam } = req.params;        
-        if (!fechaParam) {
-            return next(Object.assign(new Error('La fecha proporcionada no es válida.'), { status: 400 }));
-        }
-        const fecha = new Date(fechaParam);
-        if (isNaN(fecha.getTime())) {
-            return next(Object.assign(new Error('El tipo de dato de la fecha de inicio no es válido.'), { status: 400 }));
-        }
-        const fichas = await service.getByDate(fechaParam);
-        if (fichas.length === 0) {
-            const error = new Error('No se encontraron registros clínicos en esa fecha.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(fichas);
-    } catch (error) {
-        return next(error);
-    }
-})
+CcRouter.get('/teapot', async (req, res) => {
+    res.status(418).send(await service.tetera());
+});
 
-CcRouter.get('/rating/:calificacion', async (req, res, next) => {
-    console.log("GET /controlClinico/rating/:calificacion called");
-    try {
-        const { calificacion } = req.params;
-        if (!calificacion || calificacion.trim() === '' || isNaN(calificacion)) {
-            const error = new Error('La calificación proporcionada no es válida.');
-            error.status = 400;
-            return next(error);
-        }
-        if (calificacion < 0 || calificacion > 10) {
-            const error = new Error('La calificación debe estar entre 0 y 10.');
-            error.status = 400;
-            return next(error);
-        }
-        const fichas = await service.getByRating(calificacion);
-        if (fichas.length === 0) {
-            const error = new Error('No se encontraron registros clínicos con esa calificación.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(fichas);
-    } catch (error) {
-        return next(error);
-    }
-})
+CcRouter.get('/', async (req, res) => {
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getAll(page), page));
+});
 
-// * Necesita el id de ficha de paciente para crear el registro clínico
-CcRouter.post('/:id', async (req, res, next) => {
-    console.log("POST /controlClinico called");
-    try {
-        const data = req.body;
-        const { id } = req.params;
-        if (!data || Object.keys(data).length === 0) {
-            const error = new Error('Los datos proporcionados no son válidos.');
-            error.status = 400;
-            return next(error);
-        }
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const nuevoRegistro = await service.create(data, id);
-        res.status(201).json(nuevoRegistro);
-    } catch (error) {
-        return next(error);
-    }
-})
+// Controles de un paciente, del más reciente al más antiguo.
+CcRouter.get('/paciente/:id', async (req, res) => {
+    await requireFicha(req.params.id);
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByPaciente(req.params.id, page), page));
+});
 
-CcRouter.patch('/:id', async (req, res, next) => {
-    console.log("PATCH /controlClinico/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const data = req.body;
-        if (!data || Object.keys(data).length === 0) {
-            const error = new Error('Los datos proporcionados no son válidos.');
-            error.status = 400;
-            return next(error);
-        }
-        const registroActualizado = await service.update(id, data);
-        res.status(200).json(registroActualizado);
-    } catch (error) {
-        return next(error);
-    }
-})
+CcRouter.get('/date/:fecha', async (req, res) => {
+    const dia = parseDay(req.params.fecha);
+    if (!dia) throw httpError(400, 'La fecha proporcionada no es válida.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByDate(dia, page), page));
+});
 
-CcRouter.delete('/:id', async (req, res, next) => {
-    console.log("DELETE /controlClinico/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
+CcRouter.get('/rating/:calificacion', async (req, res) => {
+    const { calificacion } = req.params;
+    const valor = Number(calificacion);
+    if (!/^-?\d+$/.test(calificacion)) throw httpError(400, 'La calificación proporcionada no es válida.');
+    if (valor < 0 || valor > 10) throw httpError(400, 'La calificación debe estar entre 0 y 10.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByRating(valor, page), page));
+});
+
+CcRouter.get('/:id', async (req, res) => {
+    const registro = await service.getById(req.params.id);
+    if (!registro) throw httpError(404, 'Registro clínico no encontrado.');
+    res.status(200).json(registro);
+});
+
+// El :id es el de la ficha del paciente al que pertenece el control.
+CcRouter.post('/:id', async (req, res) => {
+    const data = prepararDatos(req.body);
+    await requireFicha(req.params.id);
+    const nuevoRegistro = await service.create(data, req.params.id);
+    res.status(201).json(nuevoRegistro);
+});
+
+CcRouter.patch('/:id', async (req, res) => {
+    const data = prepararDatos(req.body);
+    const registroActualizado = await service.update(req.params.id, data);
+    res.status(200).json(registroActualizado);
+});
+
+CcRouter.delete('/:id', async (req, res) => {
+    const registroEliminado = await service.delete(req.params.id);
+    res.status(200).json(registroEliminado);
+});
+
+function prepararDatos(body) {
+    if (isEmptyBody(body)) throw httpError(400, 'Los datos proporcionados no son válidos.');
+    const data = sanitizeBody(body, ['pacienteId', 'paciente']);
+    if (data.calificacion !== undefined && data.calificacion !== null) {
+        const valor = Number(data.calificacion);
+        if (typeof data.calificacion === 'boolean' || !Number.isInteger(valor) || valor < 0 || valor > 10) {
+            throw httpError(400, 'La calificación debe ser un entero entre 0 y 10.');
         }
-        const registroEliminado = await service.delete(id);
-        res.status(200).json(registroEliminado);
-    } catch (error) {
-        return next(error);
+        data.calificacion = valor;
     }
-})
+    if (normalizeDates(data, ['fecha'])) throw httpError(400, 'La fecha proporcionada no es válida.');
+    return data;
+}
 
 export default CcRouter;

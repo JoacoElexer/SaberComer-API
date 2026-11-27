@@ -1,48 +1,84 @@
-import AppUserModel from "../models/AppUserModel.js";
-import encryption from "../utils/encryption.js";
+import prisma from '../DB/prismaClient.js';
+import encryption from '../utils/encryption.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ usuario: 'asc' }];
 
 class AppUserService {
 
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
     async getUserByEmail(email) {
-        const user = await AppUserModel.findOne({ correo: email });
-        return user;
-    }
-
-    async getByRole(role) {
-        const users = await AppUserModel.find({ "role.rol": role });
-        return users;
-    }
-
-    async comparePin(inputPin, storedPin) {
-        const isMatch = await encryption.compareValue(inputPin, storedPin);
-        return isMatch;
-    }
-
-    async createUser(data) {
-        const { usuario, correo, pin, role } = data;
-        const hashedPin = await encryption.hashValue(pin);
-        if (role && (!role.rol || typeof role.rol !== "string")) {
-            throw new Error("El role debe ser un objeto con la propiedad rol: { rol: 'dev' }");
-        }
-        const newUser = new AppUserModel({
-            usuario,
-            correo,
-            pin: hashedPin,
-            role
+        return await prisma.usuario.findUnique({
+            where: { correo: email.trim().toLowerCase() }
         });
-        return await newUser.save();
+    }
+
+    async getUsersByRole(rol, page) {
+        return await findPage(prisma.usuario, { where: { rol }, orderBy: ORDER, ...page });
+    }
+
+    async getUsersByEstado(estado, page) {
+        return await findPage(prisma.usuario, { where: { estado }, orderBy: ORDER, ...page });
+    }
+
+    // Compara en tiempo constante aunque el usuario no exista (storedHash null).
+    async comparePassword(input, storedHash) {
+        return await encryption.compareValue(input, storedHash);
+    }
+
+    async createUser({ usuario, correo, password, rol = 'user', protegido = false }) {
+        return await prisma.usuario.create({
+            data: {
+                usuario: usuario.trim(),
+                correo: correo.trim().toLowerCase(),
+                password: await encryption.hashValue(password),
+                rol,
+                estado: protegido ? 'activo' : 'pendiente',
+                protegido
+            }
+        });
+    }
+
+    async getUserById(id) {
+        return await prisma.usuario.findUnique({
+            where: { id }
+        });
     }
 
     async updateUser(id, data) {
         const updateData = { ...data };
-        if (data.pin) {
-            updateData.pin = await encryption.hashValue(data.pin);
+        if (data.password) {
+            updateData.password = await encryption.hashValue(data.password);
+            // Invalida los tokens emitidos antes del cambio.
+            updateData.passwordChangedAt = new Date();
         }
-        return await AppUserModel.findByIdAndUpdate(id, updateData, { new: true });
+        return await prisma.usuario.update({
+            where: { id },
+            data: updateData
+        });
+    }
+
+    async updateEstado(id, estado) {
+        return await prisma.usuario.update({
+            where: { id },
+            data: { estado }
+        });
+    }
+
+    async updateProtegido(id, protegido) {
+        return await prisma.usuario.update({
+            where: { id },
+            data: { protegido }
+        });
     }
 
     async deleteUser(id) {
-        return await AppUserModel.findByIdAndDelete(id);
+        return await prisma.usuario.delete({
+            where: { id }
+        });
     }
 }
 

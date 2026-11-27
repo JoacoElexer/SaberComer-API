@@ -1,51 +1,57 @@
-import CcModel from '../models/ControlClinicoModel.js';
+import prisma from '../DB/prismaClient.js';
+import { dayRange } from '../utils/dates.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ fecha: 'desc' }, { id: 'asc' }];
 
 class ControlClinicoService {
 
-    async getAll() {
-        const registros = await CcModel.find();
-        return registros;
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
+    async getAll(page) {
+        return await findPage(prisma.controlClinico, { orderBy: ORDER, ...page });
     }
 
     async getById(id) {
-        const registro = await CcModel.find({ id: id }); // Usar find para devolver todas las coincidencias
-        return registro;
+        return await prisma.controlClinico.findUnique({
+            where: { id }
+        });
     }
 
-    async getByDate(fecha) {
-        const registros = await CcModel.find({ fecha: fecha }); // Usar find para devolver todas las coincidencias
-        return registros;
+    async getByPaciente(pacienteId, page) {
+        return await findPage(prisma.controlClinico, { where: { pacienteId }, orderBy: ORDER, ...page });
     }
 
-    async getByRating(rating) {
-        const registros = await CcModel.find({ calificacion: rating }); // Usar find para devolver todas las coincidencias
-        return registros;
+    async getByDate(dia, page) {
+        return await findPage(prisma.controlClinico, { where: { fecha: dayRange(dia) }, orderBy: ORDER, ...page });
     }
 
-    async create(data, id) {
-        const newId = id;
-        const newData = new CcModel({ ...data, id: newId });
-        return await newData.save();
+    async getByRating(calificacion, page) {
+        return await findPage(prisma.controlClinico, { where: { calificacion }, orderBy: ORDER, ...page });
+    }
+
+    async create(data, pacienteId) {
+        return await prisma.controlClinico.create({
+            data: {
+                ...data,
+                pacienteId
+            }
+        });
     }
 
     async update(id, data) {
-        const updatedData = await CcModel.findOneAndUpdate(
-            { _id: id },
-            { $set: data },
-            { new: true }
-        );
-        if (!updatedData) {
-            throw new Error('El registro clínico no existe');
-        }
-        return updatedData;
+        return await prisma.controlClinico.update({
+            where: { id },
+            data
+        });
     }
 
     async delete(id) {
-        const deletedData = await CcModel.findOneAndDelete({ _id: id });
-        if (!deletedData) {
-            throw new Error('El registro clínico no existe');
-        }
-        return deletedData;
+        return await prisma.controlClinico.delete({
+            where: { id }
+        });
     }
 }
 

@@ -1,64 +1,62 @@
-import FpModel from '../models/FichaPacienteModel.js';
-import idGenerator from '../utils/idGenerator.js';
-// !! Implementar middleware
+import prisma from '../DB/prismaClient.js';
+import { dayRange } from '../utils/dates.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ nombre: 'asc' }, { id: 'asc' }];
+
 class FichaPacienteService {
 
-    async getAll() {
-        const fichas = await FpModel.find();
-        return fichas;
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
+    async getAll(page) {
+        return await findPage(prisma.fichaPaciente, { orderBy: ORDER, ...page });
     }
 
     async getById(id) {
-        const ficha = await FpModel.findOne({ id: id }); // Usar find para devolver todas las coincidencias
-        return ficha;
+        return await prisma.fichaPaciente.findUnique({
+            where: { id }
+        });
     }
 
-    async getByName(nombre) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
-        const fichas = await FpModel.find(
-            { nombre: { $regex: nombre, $options: 'i' } }
-        ).collation({ locale: 'es', strength: 2 }); // Búsqueda regular insensible a mayúsculas/minúsculas
-        return fichas;
+    async getByName(nombre, page) { // * Busqueda insensible a caracteres especiales no será implementada por complejidad
+        return await findPage(prisma.fichaPaciente, {
+            where: { nombre: { contains: nombre, mode: 'insensitive' } }, orderBy: ORDER, ...page
+        });
     }
 
-    async getByTel(telefono) {
-        const fichas = await FpModel.find({ telefono: { $regex: telefono } }); // Búsqueda regular insensible a mayúsculas/minúsculas
-        return fichas;
+    async getByTel(telefono, page) {
+        return await findPage(prisma.fichaPaciente, {
+            where: { telefono: { contains: telefono } }, orderBy: ORDER, ...page
+        });
     }
 
-    async getByStartDate(fechaInicio) {
-        const fichas = await FpModel.find({ fechaInicio: fechaInicio });
-        return fichas;
-    }
-
-    async getByDayDate(inicio, fin) {
-        const fichas = await FpModel.find({ fechaInicio: { $gte: inicio, $lte: fin } });
-        return fichas;
+    // Fichas cuya fecha de inicio cae en ese día (en la zona horaria de la app).
+    async getByStartDay(dia, page) {
+        return await findPage(prisma.fichaPaciente, {
+            where: { fechaInicio: dayRange(dia) }, orderBy: ORDER, ...page
+        });
     }
 
     async create(data) {
-        const newId = await idGenerator.createId(data.nombre)
-        const newData = new FpModel({ ...data, id: newId });
-        return await newData.save();
+        return await prisma.fichaPaciente.create({
+            data
+        });
     }
 
     async update(id, data) {
-        const updatedData = await FpModel.findOneAndUpdate(
-            { id: id },
-            { $set: data },
-            { new: true }
-        );
-        if (!updatedData) {
-            throw new Error('La ficha de paciente no existe');
-        }
-        return updatedData;
+        return await prisma.fichaPaciente.update({
+            where: { id },
+            data
+        });
     }
 
+    // Los controles clínicos y registros de medidas se eliminan en cascada (onDelete: Cascade).
     async delete(id) {
-        const deletedData = await FpModel.findOneAndDelete({ id: id });
-        if (!deletedData) {
-            throw new Error('La ficha de paciente no existe');
-        }
-        return deletedData;
+        return await prisma.fichaPaciente.delete({
+            where: { id }
+        });
     }
 }
 

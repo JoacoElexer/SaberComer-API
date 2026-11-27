@@ -1,52 +1,53 @@
-import RmModel from '../models/RecordMedidasModel.js';
-// !! Implementar middleware
+import prisma from '../DB/prismaClient.js';
+import { dayRange } from '../utils/dates.js';
+import { findPage } from './paginate.js';
+
+const ORDER = [{ fecha: 'desc' }, { id: 'asc' }];
+
 class RecordMedidasService {
 
-    async getAll() {
-        const registros = await RmModel.find();
-        return registros;
+    async tetera() {
+        return 'soy una tetera!';
+    }
+
+    async getAll(page) {
+        return await findPage(prisma.recordMedidas, { orderBy: ORDER, ...page });
     }
 
     async getById(id) {
-        const registro = await RmModel.find({ id: id }); // Usar find para devolver todas las coincidencias
-        return registro;
+        return await prisma.recordMedidas.findUnique({
+            where: { id }
+        });
     }
 
-    async getByDate(fecha) {
-        const registros = await RmModel.find({ fecha: fecha }); // Usar find para devolver todas las coincidencias
-        return registros;
+    async getByPaciente(pacienteId, page) {
+        return await findPage(prisma.recordMedidas, { where: { pacienteId }, orderBy: ORDER, ...page });
     }
 
-    async getByDayDate(inicio, fin) {
-        const fichas = await RmModel.find({ fechaInicio: { $gte: inicio, $lte: fin } });
-        return fichas;
+    async getByDate(dia, page) {
+        return await findPage(prisma.recordMedidas, { where: { fecha: dayRange(dia) }, orderBy: ORDER, ...page });
     }
 
-    async create(data, id) {
-        const newId = id;
-        const newData = new RmModel({ ...data, id: newId });
-        return await newData.save();
+    async create(data, pacienteId) {
+        return await prisma.recordMedidas.create({
+            data: {
+                ...data,
+                pacienteId
+            }
+        });
     }
 
     async update(id, data) {
-        const updatedData = await RmModel.findOneAndUpdate(
-            { _id: id },
-            { $set: data },
-            { new: true }
-        );
-        if (!updatedData) {
-            throw new Error('El registro de medidas no existe');
-        }
-        return updatedData;
+        return await prisma.recordMedidas.update({
+            where: { id },
+            data
+        });
     }
 
     async delete(id) {
-        const deletedData = await RmModel.findOneAndDelete
-            ({ _id: id });
-        if (!deletedData) {
-            throw new Error('El registro de medidas no existe');
-        }
-        return deletedData;
+        return await prisma.recordMedidas.delete({
+            where: { id }
+        });
     }
 }
 

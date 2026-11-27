@@ -1,4 +1,12 @@
+# Dependencias
 node_modules/
+
+# Variables de entorno y secretos
 .env
-MongoDbConfig.js
-src/
+certs/
+
+# Cliente de Prisma generado (npx prisma generate)
+generated/
+
+# Reportes de pruebas
+coverage/

@@ -1,13 +1,18 @@
 {
   "name": "sabercomer-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST de Saber Comer: fichas de pacientes, controles clínicos y medidas.",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "jest --watchAll",
     "start": "node server.js",
-    "api": "nodemon server.js"
+    "start:render": "prisma migrate deploy && node server.js",
+    "api": "nodemon server.js",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "repository": {
     "type": "git",
@@ -21,16 +26,36 @@
   },
   "homepage": "https://github.com/JoacoElexer/SaberComer-API#readme",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "mongodb": "^6.20.0",
-    "mongoose": "^8.19.2",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "express-rate-limit": "^8.7.5",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^7.10.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "jest": "^30.5.2",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.3.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/support/setup.js"
+    ]
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

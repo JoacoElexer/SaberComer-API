@@ -1,209 +1,98 @@
 import express from 'express';
 import FichaPacienteService from '../services/FichaPacienteService.js';
+import { httpError, validateUuidParam, isEmptyBody, normalizeDates, sanitizeBody } from '../utils/validation.js';
+import { parseDay } from '../utils/dates.js';
+import { parsePagination, pageResponse } from '../utils/pagination.js';
+
 const FpRouter = express.Router();
 const service = new FichaPacienteService();
 
-FpRouter.get('/', async (req, res, next) => {
-    console.log("GET /fichaPacientes called");
-    try {
-        const data = await service.getAll();
-        if (!Array.isArray(data) || data.length === 0) {
-            const error = new Error('No se encontraron fichas de pacientes.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(data);
-    } catch (error) {
-        console.error("Error en GET /fichaPacientes:", error);
-        return next(error);
-    }
-})
+FpRouter.param('id', validateUuidParam);
 
-FpRouter.get('/id/:id', async (req, res, next) => {
-    console.log("GET /fichaPacientes/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const ficha = await service.getById(id);
-        if (!ficha) {
-            const error = new Error('Ficha de paciente no encontrada.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(ficha);
-    } catch (error) {
-        return next(error);
-    }
-})
-
-FpRouter.get('/name/:nombre', async (req, res, next) => {
-    console.log("GET /fichaPacientes/name/:nombre called");
-    try {
-        const nombre = (req.params.nombre || '').trim();
-        if (!nombre || nombre.trim() === '') {
-            const error = new Error('El nombre proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const fichas = await service.getByName(nombre);
-        if (fichas.length === 0) {
-            const error = new Error('No se encontraron fichas de pacientes con ese nombre.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(fichas);
-    } catch (error) {
-        return next(error);
-    }
-})
-
-FpRouter.get('/tel/:telefono', async (req, res, next) => {
-    console.log(`GET /fichaPacientes/tel/:telefono called ${req.params.telefono}`);
-    try {
-        const telefono = req.params.telefono.trim();
-        if (!telefono || telefono.trim() === '' || isNaN(telefono)) {
-            const error = new Error('El teléfono proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const fichas = await service.getByTel(telefono);
-        if (fichas.length === 0) {
-            const error = new Error('No se encontraron fichas de pacientes con ese teléfono.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(fichas);
-    } catch (error) {
-        next(error);
-    }
-})
-
-FpRouter.get('/startdate/:fechaInicio', async (req, res, next) => {
-    console.log("GET /fichaPacientes/startdate/:fechaInicio called");
-    try {
-        const { fechaInicio } = req.params;
-        if (!fechaInicio) {
-            return next(Object.assign(new Error('La fecha de inicio proporcionada no es válida.'), { status: 400 }));
-        }
-        const fecha = new Date(fechaInicio);
-        if (isNaN(fecha.getTime())) {
-            return next(Object.assign(new Error('El tipo de dato de la fecha de inicio no es válido.'), { status: 400 }));
-        }
-        // Llamada al service CON LA FECHA ya validada
-        const fichas = await service.getByStartDate(fecha);
-        if (!fichas || fichas.length === 0) {
-            return next(Object.assign(new Error('No se encontraron fichas de pacientes con esa fecha de inicio.'), { status: 404 }));
-        }
-        res.status(200).json(fichas);
-    } catch (error) {
-        next(error);
-    }
+FpRouter.get('/teapot', async (req, res) => {
+    res.status(418).send(await service.tetera());
 });
 
-// !! No funciona, revisar variable fecha (No necesario para entrega de universidad)
-FpRouter.get('/day/:fechaInicio', async (req, res, next) => {
-    console.log("GET /fichaPacientes/startdate/day/:fechaInicio called");
-    try {
-        const { fecha } = req.params;
-        if (!fecha) {
-            const error = new Error(`No se proporcionó una fecha: ${fecha}`);
-            error.status = 400;
-            return next(error);
-        }
-        const parsed = new Date(fecha);
-        if (isNaN(parsed.getTime())) {
-            const error = new Error('La fecha proporcionada no es válida.');
-            error.status = 400;
-            return next(error);
-        }
-        const start = new Date(parsed.setHours(0, 0, 0, 0));
-        const end = new Date(parsed.setHours(23, 59, 59, 999));
-        const fichas = await service.getByDayDate(start, end);
-        if (!fichas || fichas.length === 0) {
-            const error = new Error('No se encontraron fichas con esa fecha.');
-            error.status = 404;
-            return next(error);
-        }
-        return res.status(200).json(fichas);
-    } catch (error) {
-        return next(error);
-    }
+FpRouter.get('/', async (req, res) => {
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getAll(page), page));
 });
 
-FpRouter.post('/', async (req, res, next) => {
-    console.log("POST /fichaPacientes called");
-    try {
-        const data = req.body;
-        const errorMsg = validarDatosPaciente(data);
-        if (errorMsg) {
-            const error = new Error(errorMsg);
-            error.status = 400;
-            return next(error);
-        }
-        const nuevaFicha = await service.create(data);
-        res.status(201).json(nuevaFicha);
-    } catch (error) {
-        return next(error);
-    }
-})
+FpRouter.get('/id/:id', async (req, res) => {
+    const ficha = await service.getById(req.params.id);
+    if (!ficha) throw httpError(404, 'Ficha de paciente no encontrada.');
+    res.status(200).json(ficha);
+});
 
-FpRouter.patch('/:id', async (req, res, next) => {
-    console.log("PATCH /fichaPacientes/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const data = req.body;
-        const errorMsg = validarDatosPaciente(data);
-        if (errorMsg) {
-            const error = new Error(errorMsg);
-            error.status = 400;
-            return next(error);
-        }
-        const fichaActualizada = await service.update(id, data);
-        res.status(200).json(fichaActualizada);
-    } catch (error) {
-        return next(error);
-    }
-})
+FpRouter.get('/name/:nombre', async (req, res) => {
+    const nombre = req.params.nombre.trim();
+    if (!nombre) throw httpError(400, 'El nombre proporcionado no es válido.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByName(nombre, page), page));
+});
 
-FpRouter.delete('/:id', async (req, res, next) => {
-    console.log("DELETE /fichaPacientes/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const fichaEliminada = await service.delete(id); // !! TODO Eliminar otros registros junto con la ficha
-        res.status(200).json(fichaEliminada);
-    } catch (error) {
-        return next(error);
-    }
-})
+FpRouter.get('/tel/:telefono', async (req, res) => {
+    const telefono = req.params.telefono.trim();
+    if (!/^\d+$/.test(telefono)) throw httpError(400, 'El teléfono proporcionado no es válido.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByTel(telefono, page), page));
+});
 
-const validarDatosPaciente = (data) => {
-    if (!data || Object.keys(data).length === 0) {
-        return 'Los datos proporcionados no son válidos.';
-    }
-    if (!data.nombre || data.nombre.trim() === '') {
-        return 'El nombre proporcionado no es válido.';
-    }
-    if (!data.telefono || isNaN(data.telefono)) {
-        return 'El teléfono proporcionado no es válido.';
-    }
-    if (!data.fechaNacimiento || isNaN(new Date(data.fechaNacimiento).getTime())) {
-        return 'La fecha de nacimiento proporcionada no es válida.';
-    }
-    return null;
+// /startdate/:fecha y /day/:fecha devuelven las fichas iniciadas ese día.
+const getByStartDay = async (req, res) => {
+    const dia = parseDay(req.params.fecha);
+    if (!dia) throw httpError(400, 'La fecha proporcionada no es válida.');
+    const page = parsePagination(req.query);
+    res.status(200).json(pageResponse(await service.getByStartDay(dia, page), page));
 };
+FpRouter.get('/startdate/:fecha', getByStartDay);
+FpRouter.get('/day/:fecha', getByStartDay);
+
+FpRouter.post('/', async (req, res) => {
+    const data = prepararDatos(req.body, { parcial: false });
+    const nuevaFicha = await service.create(data);
+    res.status(201).json(nuevaFicha);
+});
+
+FpRouter.patch('/:id', async (req, res) => {
+    const data = prepararDatos(req.body, { parcial: true });
+    const fichaActualizada = await service.update(req.params.id, data);
+    res.status(200).json(fichaActualizada);
+});
+
+FpRouter.delete('/:id', async (req, res) => {
+    const fichaEliminada = await service.delete(req.params.id);
+    res.status(200).json(fichaEliminada);
+});
+
+// Valida el body y lo deja listo para Prisma. En una creación nombre, teléfono y
+// fecha de nacimiento son obligatorios; en una actualización solo se validan los
+// campos enviados.
+function prepararDatos(body, { parcial }) {
+    if (isEmptyBody(body)) throw httpError(400, 'Los datos proporcionados no son válidos.');
+    const data = sanitizeBody(body, ['controlesClinicos', 'recordMedidas']);
+
+    if (!parcial || data.nombre !== undefined) {
+        if (typeof data.nombre !== 'string' || data.nombre.trim() === '') {
+            throw httpError(400, 'El nombre proporcionado no es válido.');
+        }
+        data.nombre = data.nombre.trim();
+    }
+    if (!parcial || data.telefono !== undefined) {
+        const telefono = data.telefono === null || data.telefono === undefined ? '' : String(data.telefono).trim();
+        if (!/^\d+$/.test(telefono)) throw httpError(400, 'El teléfono proporcionado no es válido.');
+        data.telefono = telefono;
+    }
+    if (!parcial && data.fechaNacimiento === undefined) {
+        throw httpError(400, 'La fecha de nacimiento proporcionada no es válida.');
+    }
+    const fechaInvalida = normalizeDates(data, ['fechaNacimiento', 'fechaInicio']);
+    if (fechaInvalida) {
+        throw httpError(400, fechaInvalida === 'fechaNacimiento'
+            ? 'La fecha de nacimiento proporcionada no es válida.'
+            : 'La fecha de inicio proporcionada no es válida.');
+    }
+    return data;
+}
 
 export default FpRouter;
