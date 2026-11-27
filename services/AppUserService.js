@@ -1,5 +1,4 @@
-import prisma from '../DB/prismaClient.js'; // PostgreSQL
-//import AppUserModel from "../models/AppUserModel.js"; // MongoDB
+import prisma from '../DB/prismaClient.js';
 import encryption from "../utils/encryption.js";
 
 class AppUserService {

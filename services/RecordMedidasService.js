@@ -1,7 +1,6 @@
-import prisma from '../DB/prismaClient.js'; // PostgreSQL
+import prisma from '../DB/prismaClient.js';
 import { dayRange } from '../utils/dateRange.js';
-//import RmModel from '../models/RecordMedidasModel.js';
-// !! Implementar middleware
+
 class RecordMedidasService {
 
     async tetera() {
@@ -24,12 +23,6 @@ class RecordMedidasService {
         });
     }
 
-    async getByDayDate(inicio, fin) {
-        return await prisma.recordMedidas.findMany({
-            where: { fecha: { gte: inicio, lte: fin } }
-        });
-    }
-
     async create(data, pacienteId) {
         return await prisma.recordMedidas.create({
             data: {
@@ -42,7 +35,7 @@ class RecordMedidasService {
     async update(id, data) {
         return await prisma.recordMedidas.update({
             where: { id },
-            data: data
+            data
         });
     }
 

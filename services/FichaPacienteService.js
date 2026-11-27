@@ -1,8 +1,6 @@
-import prisma from '../DB/prismaClient.js'; // PostgreSQL
-//import FpModel from '../models/FichaPacienteModel.js';
-import idGenerator from '../utils/idGenerator.js';
+import prisma from '../DB/prismaClient.js';
 import { dayRange } from '../utils/dateRange.js';
-// !! Implementar middleware
+
 class FichaPacienteService {
 
     async tetera() {
@@ -31,31 +29,27 @@ class FichaPacienteService {
         });
     }
 
-    async getByStartDate(fechaInicio) {
+    // Fichas cuya fecha de inicio cae en el mismo día que `fecha`.
+    async getByStartDay(fecha) {
         return await prisma.fichaPaciente.findMany({
-            where: { fechaInicio: dayRange(fechaInicio) }
-        });
-    }
-
-    async getByDayDate(inicio, fin) {
-        return await prisma.fichaPaciente.findMany({
-            where: { fechaInicio: { gte: inicio, lte: fin } }
+            where: { fechaInicio: dayRange(fecha) }
         });
     }
 
     async create(data) {
         return await prisma.fichaPaciente.create({
-            data: data
+            data
         });
     }
 
     async update(id, data) {
         return await prisma.fichaPaciente.update({
             where: { id },
-            data: data
+            data
         });
     }
 
+    // Los controles clínicos y registros de medidas se eliminan en cascada (onDelete: Cascade).
     async delete(id) {
         return await prisma.fichaPaciente.delete({
             where: { id }

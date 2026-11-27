@@ -1,6 +1,5 @@
-import prisma from '../DB/prismaClient.js'; // PostgreSQL
+import prisma from '../DB/prismaClient.js';
 import { dayRange } from '../utils/dateRange.js';
-//import CcModel from '../models/ControlClinicoModel.js';
 
 class ControlClinicoService {
 
@@ -42,7 +41,7 @@ class ControlClinicoService {
     async update(id, data) {
         return await prisma.controlClinico.update({
             where: { id },
-            data: data
+            data
         });
     }
 

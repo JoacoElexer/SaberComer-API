@@ -1,13 +1,14 @@
 {
   "name": "sabercomer-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST de Saber Comer: fichas de pacientes, controles clínicos y medidas.",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "jest --watchAll",
     "start": "node server.js",
-    "api": "nodemon server.js"
+    "api": "nodemon server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "repository": {
     "type": "git",
@@ -27,14 +28,25 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongodb": "^6.20.0",
-    "mongoose": "^8.19.2",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
+    "jest": "^30.5.2",
     "nodemon": "^3.1.10",
-    "prisma": "^7.10.0"
+    "prisma": "^7.10.0",
+    "supertest": "^7.3.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/support/setup.js"
+    ]
   }
 }

@@ -3,12 +3,13 @@ import AppUserService from '../services/AppUserService.js';
 import {
     requireAuth, optionalAuth, requireRole, canManage, signToken, publicKey, ROLES_ADMIN
 } from '../utils/auth.js';
+import { httpError, validateUuidParam } from '../utils/validation.js';
 
 const AppUserRouter = express.Router();
 const service = new AppUserService();
 const ROLES = ["dev", "admin", "user"];
 
-const httpError = (status, message) => Object.assign(new Error(message), { status });
+AppUserRouter.param('id', validateUuidParam);
 
 AppUserRouter.get('/teapot', async (req, res, next) => {
     try {
@@ -28,7 +29,6 @@ AppUserRouter.get('/me', requireAuth, (req, res) => {
 });
 
 AppUserRouter.get('/email/:email', requireAuth, requireRole(...ROLES_ADMIN), async (req, res, next) => {
-    console.log("GET /users/email/:email called");
     try {
         const { email } = req.params;
         if (!email || email.trim() === '') {
@@ -45,7 +45,6 @@ AppUserRouter.get('/email/:email', requireAuth, requireRole(...ROLES_ADMIN), asy
 });
 
 AppUserRouter.get('/role/:role', requireAuth, requireRole(...ROLES_ADMIN), async (req, res, next) => {
-    console.log("GET /users/role/:role called");
     try {
         const { role } = req.params;
         if (!ROLES.includes(role)) {
@@ -82,7 +81,6 @@ AppUserRouter.get('/estado/:estado', requireAuth, requireRole(...ROLES_ADMIN), a
 // de aprobación. Un admin/dev con sesión puede elegir rol; solo un dev puede
 // crear otros dev o cuentas protegidas.
 AppUserRouter.post('/', optionalAuth, async (req, res, next) => {
-    console.log("POST /users called");
     try {
         const data = req.body;
         if (!data || Object.keys(data).length === 0) {
@@ -155,7 +153,6 @@ AppUserRouter.post("/login", async (req, res, next) => {
 // a quien pueda gestionar y además cambiar el rol. El estado y protegido tienen
 // sus propias rutas.
 AppUserRouter.patch('/:id', requireAuth, async (req, res, next) => {
-    console.log("PATCH /users/:id called");
     try {
         const { id } = req.params;
         const data = req.body;
@@ -241,7 +238,6 @@ AppUserRouter.patch('/protegido/:id', requireAuth, requireRole('dev'), async (re
 });
 
 AppUserRouter.delete('/:id', requireAuth, requireRole(...ROLES_ADMIN), async (req, res, next) => {
-    console.log("DELETE /users/:id called");
     try {
         const { id } = req.params;
         const user = await service.getUserById(id);

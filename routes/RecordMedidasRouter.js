@@ -1,136 +1,65 @@
 import express from 'express';
 import RecordMedidasService from '../services/RecordMedidasService.js';
 import FichaPacienteService from '../services/FichaPacienteService.js';
+import {
+    httpError, validateUuidParam, isEmptyBody, parseDate, normalizeDates, stripProtectedFields
+} from '../utils/validation.js';
+
 const RmRouter = express.Router();
 const service = new RecordMedidasService();
 const fichaService = new FichaPacienteService();
 
-RmRouter.get('/teapot', async (req, res, next) => {
-    try {
-        res.status(418).send(await service.tetera());
-    } catch (error) {
-        return next(error);
-    }
+RmRouter.param('id', validateUuidParam);
+
+RmRouter.get('/teapot', async (req, res) => {
+    res.status(418).send(await service.tetera());
 });
 
-RmRouter.get('/', async (req, res, next) => {
-    console.log("GET /recordMedidas called");
-    try {
-        const data = await service.getAll();
-        if (data.length === 0) {
-            const error = new Error('No se encontraron registros de medidas.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(data);
-    } catch (error) {
-        return next(error);
-    }
-})
+RmRouter.get('/', async (req, res) => {
+    const data = await service.getAll();
+    if (data.length === 0) throw httpError(404, 'No se encontraron registros de medidas.');
+    res.status(200).json(data);
+});
 
-RmRouter.get('/:id', async (req, res, next) => {
-    console.log("GET /recordMedidas/:id called");
-    try {
-        // ! Asegurarse de que el ID es válido antes de buscar}
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const registro = await service.getById(id);
-        if (!registro) {
-            const error = new Error('Registro de medidas no encontrado.');
-            error.status = 404;
-            return next(error);
-        }
-        res.status(200).json(registro);
-    } catch (error) {
-        return next(error);
-    }
-})
+RmRouter.get('/date/:fecha', async (req, res) => {
+    const fecha = parseDate(req.params.fecha);
+    if (!fecha) throw httpError(400, 'La fecha proporcionada no es válida.');
+    const registros = await service.getByDate(fecha);
+    if (registros.length === 0) throw httpError(404, 'No se encontraron registros de medidas con esa fecha.');
+    res.status(200).json(registros);
+});
 
-RmRouter.get('/date/:fechaParam', async (req, res, next) => {
-    console.log(`GET /recordMedidas/date/:fecha called ${req.params.fechaParam}`);
-    try {
-        const { fechaParam } = req.params;
-        if (!fechaParam) {
-            return next(Object.assign(new Error('La fecha proporcionada no es válida.'), { status: 400 }));
-        }
-        const fecha = new Date(fechaParam);
-        if (isNaN(fecha.getTime())) {
-            return next(Object.assign(new Error('El tipo de dato de la fecha no es válido.'), { status: 400 }));
-        }
-        // Llamada al service CON LA FECHA ya validada
-        const registros = await service.getByDate(fecha);
-        if (!registros || registros.length === 0) {
-            return next(Object.assign(new Error('No se encontraron registros de medidas con esa fecha.'), { status: 404 }));
-        }
-        res.status(200).json(registros);
-    } catch (error) {
-        return next(error);
-    }
-})
+RmRouter.get('/:id', async (req, res) => {
+    const registro = await service.getById(req.params.id);
+    if (!registro) throw httpError(404, 'Registro de medidas no encontrado.');
+    res.status(200).json(registro);
+});
 
-RmRouter.post('/:id', async (req, res, next) => {
-    console.log("POST /recordMedidas called");
-    const data = req.body;
-    const { id } = req.params;
-    try {
-        if (!data || Object.keys(data).length === 0) {
-            const error = new Error('Los datos proporcionados no son válidos.');
-            error.status = 400;
-            return next(error);
-        }
-        // !! Verificacion para comprobar que el id de ficha de paciente es valido
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const nuevoRegistro = await service.create(data, id);
-        res.status(201).json(nuevoRegistro);
-    } catch (error) {
-        return next(error);
-    }
-})
+// El :id es el de la ficha del paciente al que pertenece el registro.
+RmRouter.post('/:id', async (req, res) => {
+    const data = prepararDatos(req.body);
+    const ficha = await fichaService.getById(req.params.id);
+    if (!ficha) throw httpError(404, 'Ficha de paciente no encontrada.');
+    const nuevoRegistro = await service.create(data, req.params.id);
+    res.status(201).json(nuevoRegistro);
+});
 
-RmRouter.patch('/:id', async (req, res, next) => {
-    console.log("PATCH /recordMedidas/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const data = req.body;
-        if (!data || Object.keys(data).length === 0) {
-            const error = new Error('Los datos proporcionados no son válidos.');
-            error.status = 400;
-            return next(error);
-        }
-        const updatedRegistro = await service.update(id, data);
-        res.status(200).json(updatedRegistro);
-    } catch (error) {
-        return next(error);
-    }
-})
+RmRouter.patch('/:id', async (req, res) => {
+    const data = prepararDatos(req.body);
+    const updatedRegistro = await service.update(req.params.id, data);
+    res.status(200).json(updatedRegistro);
+});
 
-RmRouter.delete('/:id', async (req, res, next) => {
-    console.log("DELETE /recordMedidas/:id called");
-    try {
-        const id = req.params.id;
-        if (!id || id.trim() === '') {
-            const error = new Error('El ID proporcionado no es válido.');
-            error.status = 400;
-            return next(error);
-        }
-        const deletedRegistro = await service.delete(id);
-        res.status(200).json(deletedRegistro);
-    } catch (error) {
-        return next(error);
-    }
-})
+RmRouter.delete('/:id', async (req, res) => {
+    const deletedRegistro = await service.delete(req.params.id);
+    res.status(200).json(deletedRegistro);
+});
+
+function prepararDatos(body) {
+    if (isEmptyBody(body)) throw httpError(400, 'Los datos proporcionados no son válidos.');
+    const data = stripProtectedFields(body, ['pacienteId', 'paciente']);
+    if (normalizeDates(data, ['fecha'])) throw httpError(400, 'La fecha proporcionada no es válida.');
+    return data;
+}
 
 export default RmRouter;

@@ -1,6 +1,5 @@
 node_modules/
 .env
-MongoDbConfig.js
 src/
 /src/generated/prisma
 
