@@ -2,11 +2,14 @@ import FpRouter from '../routes/FichaPacienteRouter.js';
 import RmRouter from '../routes/RecordMedidasRouter.js';
 import CcRouter from '../routes/ControlClinicoRouter.js';
 import AppUserRouter from '../routes/AppUserRouter.js';
+import { requireAuth } from '../utils/auth.js';
 
 function router(app) {
-    app.use('/fichaPacientes', FpRouter);
-    app.use('/recordMedidas', RmRouter);
-    app.use('/controlClinico', CcRouter);
+    // Datos clínicos: cualquier usuario con sesión activa.
+    app.use('/fichaPacientes', requireAuth, FpRouter);
+    app.use('/recordMedidas', requireAuth, RmRouter);
+    app.use('/controlClinico', requireAuth, CcRouter);
+    // Usuarios: los permisos se definen ruta por ruta.
     app.use('/users', AppUserRouter);
 }
 
