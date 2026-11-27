@@ -4,12 +4,12 @@ API REST de Saber Comer para gestionar fichas de pacientes, controles clínicos 
 
 ## Requisitos
 
-- Node.js 20 o superior (desarrollado con Node 24).
+- Node.js 22.18 o superior (desarrollado con Node 24). El cliente de Prisma se genera en TypeScript y Node lo ejecuta directamente, sin compilar.
 - Una base de datos PostgreSQL. Si es la de Aiven, también hace falta su certificado CA.
 
 ## Puesta en marcha
 
-1. Instala las dependencias:
+1. Instala las dependencias. Esto también genera el cliente de Prisma en `generated/prisma` (script `postinstall`):
 
    ```bash
    npm install
@@ -23,14 +23,21 @@ API REST de Saber Comer para gestionar fichas de pacientes, controles clínicos 
    node -e "const {generateKeyPairSync}=require('crypto');const fs=require('fs');const k=generateKeyPairSync('rsa',{modulusLength:2048,publicKeyEncoding:{type:'spki',format:'pem'},privateKeyEncoding:{type:'pkcs8',format:'pem'}});fs.writeFileSync('certs/jwt-private.pem',k.privateKey);fs.writeFileSync('certs/jwt-public.pem',k.publicKey)"
    ```
 
-4. Aplica las migraciones y genera el cliente de Prisma:
+4. Aplica las migraciones:
 
    ```bash
-   npx prisma migrate deploy
-   npx prisma generate
+   npm run db:migrate
    ```
 
-5. Arranca el servidor:
+   Si cambias `prisma/schema.prisma`, crea una migración nueva con `npx prisma migrate dev --name <nombre>`. El cliente se regenera con `npx prisma generate`.
+
+5. Carga los datos iniciales (opcional, ver [Datos iniciales](#datos-iniciales)):
+
+   ```bash
+   npm run db:seed
+   ```
+
+6. Arranca el servidor:
 
    ```bash
    npm run api     # desarrollo, se reinicia con cada cambio (nodemon)
@@ -51,6 +58,16 @@ API REST de Saber Comer para gestionar fichas de pacientes, controles clínicos 
 | `JWT_PRIVATE_KEY_PATH` | Clave privada para firmar tokens (por defecto `./certs/jwt-private.pem`). |
 | `JWT_PUBLIC_KEY_PATH` | Clave pública para verificarlos (por defecto `./certs/jwt-public.pem`). |
 | `JWT_EXPIRES_IN` | Duración del token, por ejemplo `7d` o `12h` (por defecto `7d`). |
+| `SEED_DEV_USUARIO`, `SEED_DEV_CORREO`, `SEED_DEV_PIN` | Datos de la cuenta dev que crea el seed. Solo los usa `npm run db:seed`. |
+
+## Datos iniciales
+
+`npm run db:seed` ejecuta [`prisma/seed.js`](prisma/seed.js) y carga:
+
+- **Una cuenta dev**, activa y protegida, con los datos de `SEED_DEV_*`. Si ya existe una cuenta con ese correo, no se modifica (su PIN no cambia).
+- **3 pacientes ficticios**, cada uno con **3 controles clínicos y 3 registros de medidas**, uno por semana desde su fecha de inicio.
+
+Los registros tienen ids fijos, así que el seed se puede ejecutar varias veces sin duplicar nada. Si vuelves a ejecutarlo, los datos de ejemplo recuperan sus valores originales. Los datos están en [`prisma/seedData.js`](prisma/seedData.js).
 
 ## Estructura
 
@@ -62,7 +79,9 @@ routes/             Endpoints y validación de cada recurso.
 services/           Acceso a datos con Prisma.
 utils/              Autenticación, validación, fechas, cifrado y manejo de errores.
 DB/prismaClient.js  Cliente de Prisma con el adaptador de PostgreSQL y SSL.
-prisma/             Esquema y migraciones.
+prisma/             Esquema, migraciones y seed.
+prisma7.config.ts   Configuración de Prisma (esquema, migraciones, seed y conexión).
+generated/prisma/   Cliente de Prisma generado (no se sube al repositorio).
 tests/              Pruebas automatizadas.
 ```
 

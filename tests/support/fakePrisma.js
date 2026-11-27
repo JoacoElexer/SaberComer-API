@@ -118,6 +118,10 @@ export function createFakePrisma() {
                 tables[name][index] = row;
                 return { ...row };
             },
+            async upsert({ where, update, create }) {
+                const exists = tables[name].some(r => matches(r, where));
+                return exists ? this.update({ where, data: update }) : this.create({ data: create });
+            },
             async delete({ where }) {
                 const index = tables[name].findIndex(r => matches(r, where));
                 if (index === -1) throw knownError('P2025', 'Record to delete not found.');

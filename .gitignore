@@ -1,7 +1,12 @@
+# Dependencias
 node_modules/
-.env
-src/
-/src/generated/prisma
 
-/src/generated/prisma
+# Variables de entorno y secretos
+.env
 certs/
+
+# Cliente de Prisma generado (npx prisma generate)
+generated/
+
+# Reportes de pruebas
+coverage/

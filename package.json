@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "api": "nodemon server.js",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
@@ -28,12 +31,12 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^7.10.0"
   },
   "devDependencies": {
     "jest": "^30.5.2",
     "nodemon": "^3.1.10",
-    "prisma": "^7.10.0",
     "supertest": "^7.3.2"
   },
   "jest": {
@@ -48,5 +51,8 @@
     "setupFiles": [
       "<rootDir>/tests/support/setup.js"
     ]
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

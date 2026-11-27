@@ -1,7 +1,11 @@
-// npx prisma migrate dev --name init_postgres_tables
+// Cliente generado en generated/prisma (ignorado por git). Se regenera con
+// `npx prisma generate`, que también se ejecuta en `npm install` (postinstall).
 
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "esm"
+  runtime      = "nodejs"
 }
 
 datasource db {
