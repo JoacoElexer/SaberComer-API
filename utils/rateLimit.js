@@ -16,11 +16,13 @@ const limiter = (windowMs, limit, message, extra = {}) => rateLimit({
     ...extra
 });
 
-// Límite general por IP para toda la API.
+// Límite general por IP para toda la API. /health queda fuera: Render la llama
+// cada pocos segundos y, si se bloqueara, reiniciaría el servicio.
 export const apiLimiter = limiter(
     15 * MINUTO,
     intEnv('RATE_LIMIT_API_MAX', 300),
-    'Demasiadas peticiones. Intenta de nuevo en unos minutos.'
+    'Demasiadas peticiones. Intenta de nuevo en unos minutos.',
+    { skip: (req) => req.path === '/health' }
 );
 
 // Intentos fallidos de login por IP (los exitosos no cuentan).

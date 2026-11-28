@@ -10,3 +10,6 @@ generated/
 
 # Reportes de pruebas
 coverage/
+
+# Documentación local para trabajar el front-end (no se sube)
+apicontext.md

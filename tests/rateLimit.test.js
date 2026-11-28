@@ -3,6 +3,7 @@ import request from 'supertest';
 // Límites bajos solo para este archivo (cada archivo de pruebas carga sus propios módulos).
 process.env.RATE_LIMIT_LOGIN_MAX = '3';
 process.env.RATE_LIMIT_REGISTER_MAX = '2';
+process.env.RATE_LIMIT_API_MAX = '20';
 const { loadApp, seedUsers, bearer, PASSWORD } = await import('./support/helpers.js');
 const { app, prisma, auth } = await loadApp();
 let tokens;
@@ -12,6 +13,12 @@ beforeAll(() => {
 });
 
 describe('Límite de peticiones', () => {
+    // Va primero: el límite general (20) cuenta todas las peticiones del archivo.
+    test('/health no cuenta para el límite general', async () => {
+        for (let i = 0; i < 25; i++) expect((await request(app).get('/health')).status).toBe(200);
+        expect((await request(app).get('/users/teapot')).status).toBe(418);
+    });
+
     test('tras 3 logins fallidos se bloquea con 429; los exitosos no cuentan', async () => {
         const intento = (password) => request(app).post('/users/login').send({ correo: 'user@ejemplo.test', password });
         expect((await intento(PASSWORD)).status).toBe(200);

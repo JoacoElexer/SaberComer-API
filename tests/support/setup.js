@@ -29,3 +29,5 @@ process.env.RATE_LIMIT_API_MAX ??= '100000';
 process.env.RATE_LIMIT_LOGIN_MAX ??= '100000';
 process.env.RATE_LIMIT_REGISTER_MAX ??= '100000';
 process.env.APP_TIMEZONE ??= 'America/Mexico_City';
+// Sin caché en /health para que las pruebas vean cada cambio de estado.
+process.env.HEALTH_CACHE_MS ??= '0';

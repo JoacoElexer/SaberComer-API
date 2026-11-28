@@ -88,7 +88,8 @@ Más detalles del despliegue:
 | `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Contenido de las claves PEM. Tienen prioridad sobre las rutas. |
 | `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | Rutas de las claves (por defecto `./certs/jwt-private.pem` y `./certs/jwt-public.pem`). |
 | `JWT_EXPIRES_IN` | Duración del token, por ejemplo `7d` o `12h` (por defecto `7d`). |
-| `RATE_LIMIT_API_MAX` | Peticiones por IP cada 15 minutos (por defecto `300`). |
+| `HEALTH_CACHE_MS` | Milisegundos que `/health` reutiliza un resultado correcto antes de volver a consultar la base (por defecto `30000`). |
+| `RATE_LIMIT_API_MAX` | Peticiones por IP cada 15 minutos (por defecto `300`; `/health` no cuenta). |
 | `RATE_LIMIT_LOGIN_MAX` | Intentos de login fallidos por IP cada 15 minutos (por defecto `10`). |
 | `RATE_LIMIT_REGISTER_MAX` | Registros públicos por IP cada hora (por defecto `5`). |
 | `SEED_DEV_USUARIO`, `SEED_DEV_CORREO`, `SEED_DEV_PASSWORD` | Datos de la cuenta dev que crea el seed. Solo los usa `npm run db:seed`. |
@@ -182,7 +183,7 @@ Una lista sin resultados responde `200` con `"data": []` y `"total": 0`. Orden d
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/health` | Estado del servicio y de la base de datos (200 o 503). |
+| GET | `/health` | Estado del servicio y de la base de datos (200 o 503). Render lo consulta cada pocos segundos. Un resultado correcto se reutiliza 30 segundos; un fallo se vuelve a comprobar en la siguiente llamada. No cuenta para el límite de peticiones y solo aparece en los logs cuando falla. |
 
 ### Usuarios (`/users`)
 
